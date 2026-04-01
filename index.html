@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>認親認戚圖 · 家庭人物關係圖</title>
+    <title>認親認戚產生器 · 家庭人物關係圖</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
@@ -36,7 +36,7 @@
             <div class="flex items-center gap-x-3">
                 <div class="w-10 h-10 bg-red-500 text-white rounded-2xl flex items-center justify-center text-2xl">👪</div>
                 <div>
-                    <h1 class="text-3xl font-bold tracking-tight">認親認戚圖</h1>
+                    <h1 class="text-3xl font-bold tracking-tight">認親認戚產生器</h1>
                     <p class="text-slate-500 text-sm">由你角度出發 · 一目了然認清所有親戚</p>
                 </div>
             </div>
@@ -56,7 +56,7 @@
             <div class="lg:col-span-7 bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-2xl font-semibold flex items-center gap-x-2">
-                        👥 認親認戚圖
+                        👥 關係圖
                         <span class="text-emerald-500 text-sm font-normal bg-emerald-100 px-3 py-0.5 rounded-3xl">互動拖拉 • 放大縮小 • 點擊編輯 • 長按連線</span>
                     </h2>
                     <div class="text-xs text-slate-400 flex items-center gap-x-1">
@@ -84,7 +84,7 @@
                     <!-- JS 動態生成 -->
                 </div>
 
-                <!-- 匯出 / 匯入 / 清空（移到最下方） -->
+                <!-- 匯出 / 匯入 / 清空（最下方） -->
                 <div class="mt-6 pt-6 border-t border-slate-200 flex flex-wrap items-center gap-3">
                     <button onclick="exportData()" 
                             class="flex-1 sm:flex-none flex items-center justify-center gap-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl font-medium text-sm transition-colors">
@@ -181,7 +181,7 @@
         </div>
     </div>
 
-    <!-- 連線管理 Modal（新增 + 取消連線） -->
+    <!-- 連線管理 Modal -->
     <div id="connect-modal" onclick="if(event.target.id==='connect-modal')hideConnectModal()" 
          class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
         <div onclick="event.stopImmediatePropagation()" 
@@ -189,7 +189,7 @@
             <h3 id="connect-title" class="text-2xl font-bold mb-6">管理連線</h3>
             
             <div id="connect-content" class="space-y-8">
-                <!-- JS 動態生成：已連線 + 新增表單 -->
+                <!-- JS 動態生成 -->
             </div>
 
             <div class="flex gap-x-3 mt-8">
@@ -213,20 +213,20 @@
                 notes: ""
             },
             relatives: [],
-            connections: []     // {from, to, label}
+            connections: []
         }
 
         let network = null
         let nodesDataSet = null
         let edgesDataSet = null
         let currentEditId = null
-        let currentSourceId = null   // 目前正在管理連線的節點 ID
+        let currentSourceId = null
 
         // 生肖資料
         const zodiacList = ["鼠", "牛", "虎", "兔", "龍", "蛇", "馬", "羊", "猴", "雞", "狗", "豬"]
         const zodiacEmoji = ["🐭", "🐮", "🐯", "🐰", "🐲", "🐍", "🐴", "🐑", "🐒", "🐔", "🐶", "🐷"]
 
-        // ==================== 親戚關係五類別（已更新） ====================
+        // ==================== 親戚關係五類別 ====================
         const relationCategories = [
             {
                 label: "0. 我們一家",
@@ -308,7 +308,6 @@
             nodesDataSet.add(getNode(familyData.myInfo))
             familyData.relatives.forEach(person => nodesDataSet.add(getNode(person)))
 
-            // 自動連線（主角 → 親戚）—— 無方向箭頭
             familyData.relatives.forEach(person => {
                 edgesDataSet.add({
                     from: 0,
@@ -319,7 +318,6 @@
                 })
             })
 
-            // 手動連線 —— 加上方向箭頭（綠色）
             familyData.connections.forEach(conn => {
                 edgesDataSet.add({
                     from: conn.from,
@@ -350,14 +348,12 @@
 
             network = new vis.Network(container, { nodes: nodesDataSet, edges: edgesDataSet }, options)
 
-            // 左鍵點擊 → 編輯
             network.on("click", function (params) {
                 if (params.nodes.length > 0) {
                     editPerson(params.nodes[0])
                 }
             })
 
-            // 桌面右鍵
             container.addEventListener("contextmenu", function (e) {
                 e.preventDefault()
                 const nodeId = network.getNodeAt({ x: e.offsetX, y: e.offsetY })
@@ -366,7 +362,6 @@
                 }
             })
 
-            // 手機長按連線
             let longPressTimer = null
             const LONG_PRESS_DURATION = 650
 
@@ -641,7 +636,7 @@
                 : "未填出生年份"
         }
 
-        // ==================== 連線管理（含新增 + 取消） ====================
+        // ==================== 連線管理 ====================
         function getOtherPeopleOptions(sourceId) {
             let html = `<option value="">-- 選擇目標人物 --</option>`
             if (sourceId !== 0) html += `<option value="0">${familyData.myInfo.name} (自己 / 主角)</option>`
@@ -657,7 +652,7 @@
             const sourcePerson = getPersonById(sourceId)
             let html = `<div class="space-y-8">`
 
-            // 1. 已連線列表（可取消）
+            // 已連線列表
             const relatedConns = familyData.connections.filter(c => c.from === sourceId || c.to === sourceId)
             html += `<div>`
             html += `<label class="block text-sm font-medium mb-3 text-emerald-700">已連線的人物（點擊取消連線）</label>`
@@ -694,7 +689,7 @@
             }
             html += `</div>`
 
-            // 2. 新增連線
+            // 新增連線表單 + 儲存按鈕
             html += `
             <div>
                 <h4 class="text-sm font-semibold mb-4 flex items-center gap-x-2"><span class="text-emerald-500 text-xl">➕</span> 新增連線</h4>
@@ -711,6 +706,11 @@
                             ${getRelationOptionsHTML()}
                         </select>
                     </div>
+                    <button onclick="saveConnection()" 
+                            class="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-2xl transition-colors flex items-center justify-center gap-x-2">
+                        <span class="text-xl">💾</span>
+                        儲存連線
+                    </button>
                 </div>
             </div>`
 
@@ -750,7 +750,6 @@
 
             const targetId = parseInt(targetIdStr)
 
-            // 避免完全重複
             const exists = familyData.connections.some(c => 
                 (c.from === currentSourceId && c.to === targetId) || 
                 (c.from === targetId && c.to === currentSourceId)
@@ -768,7 +767,7 @@
             saveToLocalStorage()
             updateNetwork()
             
-            // 儲存後繼續保持 modal 開啟，讓用戶可以繼續新增或取消
+            // 儲存後重新渲染 modal，讓用戶可以繼續新增
             document.getElementById("connect-content").innerHTML = getConnectContentHTML(currentSourceId)
         }
 
@@ -776,7 +775,6 @@
             familyData.connections = familyData.connections.filter(c => !(c.from === fromId && c.to === toId))
             saveToLocalStorage()
             updateNetwork()
-            // 重新渲染 modal 內容
             if (document.getElementById("connect-modal").classList.contains("flex") && currentSourceId !== null) {
                 document.getElementById("connect-content").innerHTML = getConnectContentHTML(currentSourceId)
             }
