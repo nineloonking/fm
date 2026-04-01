@@ -3,553 +3,520 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>拜山關係圖 · 家庭人物關係圖</title>
+    <title>認親認戚圖 · 拜山過年認親神器</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
         body { font-family: 'Noto Sans TC', system-ui, sans-serif; }
-        #mynetwork { width: 100%; height: 550px; border: 2px solid #e5e7eb; border-radius: 16px; background: #f8fafc; }
+        #mynetwork { width: 100%; height: 520px; border: 2px solid #e5e7eb; border-radius: 16px; background: #f8fafc; }
         .modal { animation: modalPop 0.3s ease-out; }
         @keyframes modalPop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .context-menu {
-            position: absolute;
-            background: white;
-            border: 1px solid #cbd5e1;
-            border-radius: 12px;
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-            z-index: 100;
-            padding: 6px 0;
-            min-width: 160px;
-        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
     <div class="max-w-7xl mx-auto px-4 py-6">
-        <div class="flex items-center justify-between mb-8 bg-white rounded-2xl shadow-sm border border-slate-200 px-6 py-4">
-            <div class="flex items-center gap-x-3">
-                <div class="w-10 h-10 bg-red-500 text-white rounded-2xl flex items-center justify-center text-2xl">👪</div>
+        <div class="flex items-center justify-between mb-8 bg-white rounded-3xl shadow-sm border border-slate-200 px-8 py-5">
+            <div class="flex items-center gap-x-4">
+                <div class="w-12 h-12 bg-amber-500 text-white rounded-3xl flex items-center justify-center text-3xl">👨‍👩‍👧‍👦</div>
                 <div>
-                    <h1 class="text-3xl font-bold tracking-tight">拜山關係圖</h1>
-                    <p class="text-slate-500 text-sm">由你角度出發 · 五大類親戚 · 右鍵操作</p>
+                    <h1 class="text-3xl font-bold">認親認戚圖</h1>
+                    <p class="text-slate-500">拜山、過年、聚會 · 即刻認清所有親戚關係</p>
                 </div>
             </div>
             
-            <div class="flex items-center gap-x-4">
-                <div onclick="editMyInfo()" class="flex items-center gap-x-2 bg-slate-100 hover:bg-slate-200 transition-colors rounded-2xl px-4 py-2 cursor-pointer">
-                    <span class="text-2xl">🧍‍♂️</span>
-                    <div>
-                        <div id="my-name-display" class="font-semibold">我</div>
-                        <div id="my-age-zodiac" class="text-xs text-slate-500"></div>
-                    </div>
-                </div>
-
-                <button onclick="exportData()" class="flex items-center gap-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-2xl font-medium text-sm transition-colors">
+            <div class="flex gap-x-3">
+                <button onclick="exportData()" class="flex items-center gap-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-medium">
                     📤 匯出 JSON
                 </button>
-                <label onclick="document.getElementById('import-input').click()" class="flex items-center gap-x-2 bg-slate-700 hover:bg-slate-800 text-white px-5 py-2.5 rounded-2xl font-medium text-sm transition-colors cursor-pointer">
+                <label class="flex items-center gap-x-2 bg-slate-700 hover:bg-slate-800 text-white px-6 py-3 rounded-2xl font-medium cursor-pointer">
                     📥 匯入 JSON
                     <input id="import-input" type="file" accept=".json" class="hidden" onchange="importData(event)">
                 </label>
-
-                <button onclick="clearAllData()" class="text-red-500 hover:text-red-600 flex items-center gap-x-1 text-sm font-medium">
-                    🗑️ 清空全部
-                </button>
+                <button onclick="clearAllData()" class="text-red-500 hover:text-red-600 px-4 py-3">🗑️ 清空</button>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <!-- 關係圖 -->
-            <div class="lg:col-span-7 bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-semibold">👥 人物關係圖（右鍵操作）</h2>
-                </div>
+            <div class="lg:col-span-7 bg-white rounded-3xl shadow-sm border p-6">
+                <h2 class="text-2xl font-semibold mb-4 flex items-center gap-x-2">
+                    👥 認親認戚圖
+                    <span class="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-3xl">拖拉 • 縮放 • 右鍵連線</span>
+                </h2>
                 <div id="mynetwork"></div>
             </div>
 
             <!-- 親戚列表 -->
-            <div class="lg:col-span-5 bg-white rounded-3xl shadow-sm border border-slate-200 p-6 flex flex-col">
+            <div class="lg:col-span-5 bg-white rounded-3xl shadow-sm border p-6 flex flex-col">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-semibold">📋 親戚列表</h2>
-                    <button onclick="showAddModal()" class="flex items-center gap-x-2 bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-2xl font-medium text-sm">
+                    <h2 class="text-2xl font-semibold">親戚列表</h2>
+                    <button onclick="showAddModal()" 
+                            class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-2xl font-medium flex items-center gap-x-2">
                         <span class="text-xl">+</span> 新增親戚
                     </button>
                 </div>
-                <div class="flex-1 overflow-auto" id="relatives-list"></div>
+                <div id="relatives-list" class="flex-1 overflow-auto space-y-3"></div>
             </div>
         </div>
     </div>
 
     <!-- 新增/編輯 Modal -->
-    <div id="modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
-        <div class="modal bg-white w-full max-w-lg mx-4 rounded-3xl shadow-2xl p-8">
+    <div id="modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-50">
+        <div onclick="event.stopImmediatePropagation()" class="modal bg-white w-full max-w-lg mx-4 rounded-3xl p-8 shadow-2xl">
             <h3 id="modal-title" class="text-2xl font-bold mb-6">新增親戚</h3>
             
-            <div class="space-y-6">
+            <div class="space-y-5">
                 <!-- 關係類別 -->
                 <div>
-                    <label class="block text-sm font-medium mb-2">關係類別</label>
-                    <select id="input-category" onchange="updateRelationSuggestions()" 
-                            class="w-full border border-slate-300 focus:border-red-400 rounded-2xl px-4 py-3 text-lg focus:outline-none">
+                    <label class="block text-sm font-medium mb-1.5">關係類別</label>
+                    <select id="input-category" class="w-full border border-slate-300 rounded-2xl px-4 py-3 focus:outline-none focus:border-amber-400">
                         <option value="0">0. 我們一家</option>
                         <option value="1">1. 阿爸嗰邊（父系）</option>
                         <option value="2">2. 阿媽嗰邊（母系）</option>
-                        <option value="3">3. 老婆/老公阿爸嗰邊（岳父系）</option>
-                        <option value="4">4. 老婆阿媽嗰邊（岳母系）</option>
+                        <option value="3">3. 老婆/老公阿爸嗰邊（岳父/老爺系）</option>
+                        <option value="4">4. 老婆/老公阿媽嗰邊（岳母系）</option>
                     </select>
                 </div>
 
-                <!-- 具體關係 -->
+                <!-- 稱呼（關係） -->
                 <div>
-                    <label class="block text-sm font-medium mb-2">具體稱呼（由你角度）</label>
-                    <input id="input-relation" type="text" list="relation-suggestions"
-                           class="w-full border border-slate-300 focus:border-red-400 rounded-2xl px-4 py-3 text-lg focus:outline-none"
-                           placeholder="例如：阿爸、堂哥、舅父...">
-                    <datalist id="relation-suggestions"></datalist>
+                    <label class="block text-sm font-medium mb-1.5">稱呼 / 關係（由你角度）</label>
+                    <input id="input-relation" list="relation-suggestions" 
+                           class="w-full border border-slate-300 rounded-2xl px-4 py-3 focus:outline-none focus:border-amber-400"
+                           placeholder="例如：阿爸、堂哥、岳母...">
+                    <datalist id="relation-suggestions">
+                        <!-- 會由 JS 動態填充常用稱呼 -->
+                    </datalist>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium mb-2">名字 / 稱呼</label>
-                        <input id="input-name" type="text" 
-                               class="w-full border border-slate-300 focus:border-red-400 rounded-2xl px-4 py-3 text-lg focus:outline-none"
-                               placeholder="例如：阿明、表姐阿花">
+                        <label class="block text-sm font-medium mb-1.5">名字 / 稱呼</label>
+                        <input id="input-name" type="text" class="w-full border border-slate-300 rounded-2xl px-4 py-3 focus:outline-none focus:border-amber-400" placeholder="例如：阿明">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-2">出生年份</label>
+                        <label class="block text-sm font-medium mb-1.5">出生年份</label>
                         <input id="input-birthyear" type="number" min="1900" max="2030" 
-                               class="w-full border border-slate-300 focus:border-red-400 rounded-2xl px-4 py-3 text-lg focus:outline-none"
-                               placeholder="1995">
-                        <div id="preview-age-zodiac" class="mt-2 text-emerald-600 text-sm font-medium"></div>
+                               class="w-full border border-slate-300 rounded-2xl px-4 py-3 focus:outline-none focus:border-amber-400" placeholder="1995">
+                        <div id="preview-age-zodiac" class="mt-1 text-sm text-emerald-600"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1.5">性別</label>
+                        <div class="flex gap-3">
+                            <label onclick="selectGender(this)" data-value="男" class="gender-option flex-1 text-center py-4 bg-slate-100 hover:bg-blue-100 rounded-2xl cursor-pointer border-2 border-transparent">👦 男</label>
+                            <label onclick="selectGender(this)" data-value="女" class="gender-option flex-1 text-center py-4 bg-slate-100 hover:bg-pink-100 rounded-2xl cursor-pointer border-2 border-transparent">👧 女</label>
+                        </div>
+                        <input type="hidden" id="input-gender">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium mb-2">性別</label>
-                    <div class="flex gap-x-4">
-                        <label onclick="selectGender(this)" data-value="男" class="gender-option flex-1 flex items-center justify-center gap-x-2 border-2 border-transparent bg-slate-100 hover:bg-blue-100 rounded-2xl py-4 cursor-pointer">👦 男</label>
-                        <label onclick="selectGender(this)" data-value="女" class="gender-option flex-1 flex items-center justify-center gap-x-2 border-2 border-transparent bg-slate-100 hover:bg-pink-100 rounded-2xl py-4 cursor-pointer">👧 女</label>
-                    </div>
-                    <input type="hidden" id="input-gender">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium mb-2">備註</label>
-                    <textarea id="input-notes" rows="3" class="w-full border border-slate-300 focus:border-red-400 rounded-3xl px-4 py-3 focus:outline-none resize-none" placeholder="電話、特徵、住邊度..."></textarea>
+                    <label class="block text-sm font-medium mb-1.5">備註</label>
+                    <textarea id="input-notes" rows="3" class="w-full border border-slate-300 rounded-3xl px-4 py-3 focus:outline-none resize-none" placeholder="電話、特徵、住址等..."></textarea>
                 </div>
             </div>
 
-            <div class="flex gap-x-3 mt-8">
-                <button onclick="hideModal()" class="flex-1 py-4 text-slate-500 font-medium border border-slate-300 rounded-2xl hover:bg-slate-100">取消</button>
-                <button onclick="savePerson()" id="save-btn" class="flex-1 py-4 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-2xl">儲存親戚</button>
+            <div class="flex gap-3 mt-8">
+                <button onclick="hideModal()" class="flex-1 py-4 border border-slate-300 rounded-2xl hover:bg-slate-100">取消</button>
+                <button onclick="savePerson()" id="save-btn" class="flex-1 py-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-2xl">儲存</button>
             </div>
         </div>
     </div>
 
-    <!-- 右鍵選單 -->
-    <div id="context-menu" class="context-menu hidden"></div>
+    <!-- 連線 Modal -->
+    <div id="connect-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-50">
+        <div class="bg-white w-full max-w-md mx-4 rounded-3xl p-8">
+            <h3 class="text-xl font-bold mb-4">連線到其他親戚</h3>
+            <p id="connect-from-name" class="mb-4 text-slate-600"></p>
+            
+            <select id="connect-to-id" class="w-full border border-slate-300 rounded-2xl px-4 py-3 mb-4">
+                <!-- JS 動態填充 -->
+            </select>
+
+            <input id="connect-label" type="text" placeholder="關係標籤（例如：夫妻、堂兄）" 
+                   class="w-full border border-slate-300 rounded-2xl px-4 py-3 mb-6">
+
+            <div class="flex gap-3">
+                <button onclick="hideConnectModal()" class="flex-1 py-4 border rounded-2xl">取消</button>
+                <button onclick="addConnection()" class="flex-1 py-4 bg-amber-500 text-white rounded-2xl">建立連線</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // ==================== 資料 ====================
         let familyData = {
-            myInfo: { id: 0, name: "我", relation: "自己", gender: "", birthYear: null, notes: "", category: "0" },
-            relatives: []   // {id, category, relation, name, gender, birthYear, notes}
+            people: [],           // 所有人（包括主角），id:0 固定為主角
+            connections: []       // 自訂連線 {from, to, label}
         }
 
         let network = null
-        let nodesDataSet = null
-        let edgesDataSet = null
+        let nodes = null
+        let edges = null
         let currentEditId = null
-        let contextNodeId = null
-        let contextEdgeId = null
+        let connectFromId = null
+
+        const categories = [
+            {id:0, name:"我們一家", suggestions:["主角","阿爸","阿媽","阿哥","細佬","家姐","阿妹","老公","老婆","仔仔","女女"]},
+            {id:1, name:"阿爸嗰邊（父系）", suggestions:["阿爺","阿嫲","伯公","伯婆","叔公","叔婆","姑婆","姑公","伯父","伯娘","阿叔","嬸嬸","姑姐","姑丈","堂兄","堂姐","堂弟","堂妹","表兄","表姐","表弟","表妹"]},
+            {id:2, name:"阿媽嗰邊（母系）", suggestions:["外公","外嫲","外伯公","外伯婆","外叔公","外叔婆","姨婆","姨公","舅父","舅母","妗母","姨媽","姨姨","姨丈","表兄","表姐","表弟","表妹"]},
+            {id:3, name:"老婆/老公阿爸嗰邊（岳父系）", suggestions:["岳父","外父","老爺","大舅","大舅奶","舅仔","小舅奶","大姨","襟兄","姨仔","襟弟"]},
+            {id:4, name:"老婆/老公阿媽嗰邊（岳母系）", suggestions:["岳母","外母","奶奶","外舅父","外舅母","外姨媽","外姨丈"]}
+        ]
 
         const zodiacList = ["鼠","牛","虎","兔","龍","蛇","馬","羊","猴","雞","狗","豬"]
         const zodiacEmoji = ["🐭","🐮","🐯","🐰","🐲","🐍","🐴","🐑","🐒","🐔","🐶","🐷"]
 
-        // 五大類別 + 建議稱呼
-        const categories = {
-            "0": ["主角", "阿爸", "阿媽", "阿哥", "細佬", "家姐", "阿妹", "老公", "老婆", "仔仔", "女女"],
-            "1": ["阿爺", "阿嫲", "伯公", "伯婆", "叔公", "叔婆", "姑婆", "姑公", "伯父", "伯娘", "阿叔", "嬸嬸", "姑姐", "姑丈", "堂兄", "堂姐", "堂弟", "堂妹", "表兄", "表姐", "表弟", "表妹"],
-            "2": ["外公", "外嫲", "外伯公", "外伯婆", "外叔公", "外叔婆", "姨婆", "姨公", "舅父", "舅母", "姨媽", "阿姨", "姨丈", "表兄", "表姐", "表弟", "表妹"],
-            "3": ["岳父", "外父", "老爺", "大舅", "大舅奶", "舅仔", "小舅奶", "大姨", "襟兄", "姨仔", "襟弟"],
-            "4": ["岳母", "外母", "奶奶", "外舅父", "外舅母", "外姨媽", "外姨丈"]
-        }
-
-        function getCurrentYear() { return new Date().getFullYear() }
-
-        function getAgeZodiac(person) {
-            if (!person.birthYear) return "未填出生年份"
-            const age = getCurrentYear() - person.birthYear
-            const idx = (person.birthYear - 4) % 12
-            const z = zodiacList[idx < 0 ? idx + 12 : idx]
-            const e = zodiacEmoji[idx < 0 ? idx + 12 : idx]
-            return `${age}歲　${z}${e}`
-        }
-
-        function getNodeColor(gender) {
-            if (gender === "男") return { background: "#3b82f6", border: "#1e40af" }
-            if (gender === "女") return { background: "#ec4899", border: "#be185d" }
-            return { background: "#64748b", border: "#334155" }
+        function getAgeZodiac(birthYear) {
+            if (!birthYear) return "";
+            const age = new Date().getFullYear() - birthYear;
+            const idx = (birthYear - 4) % 12;
+            const z = zodiacList[idx < 0 ? idx + 12 : idx];
+            return `${age}歲 ${z} ${zodiacEmoji[idx < 0 ? idx + 12 : idx]}`;
         }
 
         function getNode(person) {
-            const color = getNodeColor(person.gender)
+            const isMe = person.id === 0;
+            const color = person.gender === "男" ? "#3b82f6" : person.gender === "女" ? "#ec4899" : "#64748b";
             return {
                 id: person.id,
-                label: person.name,
-                title: `<b>${person.relation}</b><br>${person.name}<br>${getAgeZodiac(person)}<br><small>${person.notes || ""}</small>`,
-                color: { background: color.background, border: color.border, highlight: { background: color.background } },
-                shape: "circle",
-                size: person.id === 0 ? 48 : 36,
-                font: { size: person.id === 0 ? 22 : 18, color: "#fff", bold: true }
-            }
+                label: person.name || person.relation || "未命名",
+                title: `${person.relation || ''} ${person.name || ''}\n${getAgeZodiac(person.birthYear)}\n${person.notes || ''}`,
+                color: { background: color, border: '#1e2937', highlight: {background: '#f59e0b'} },
+                size: isMe ? 48 : 36,
+                font: { size: isMe ? 20 : 16, color: '#fff', bold: true }
+            };
         }
 
         function initNetwork() {
-            const container = document.getElementById("mynetwork")
-            nodesDataSet = new vis.DataSet()
-            edgesDataSet = new vis.DataSet()
+            const container = document.getElementById("mynetwork");
+            nodes = new vis.DataSet();
+            edges = new vis.DataSet();
 
-            nodesDataSet.add(getNode(familyData.myInfo))
+            familyData.people.forEach(p => nodes.add(getNode(p)));
 
-            familyData.relatives.forEach(p => {
-                nodesDataSet.add(getNode(p))
-                // 預設連線
-                edgesDataSet.add({ id: `e${familyData.myInfo.id}-${p.id}`, from: 0, to: p.id, label: p.relation, font: {align: "middle", size: 13}, color: {color: "#64748b"} })
-            })
+            // 加入自訂連線
+            familyData.connections.forEach(conn => {
+                edges.add({
+                    from: conn.from,
+                    to: conn.to,
+                    label: conn.label || "",
+                    arrows: "to",
+                    color: {color: "#64748b"}
+                });
+            });
 
             const options = {
-                nodes: { borderWidth: 3, shadow: true },
-                edges: { smooth: {type: "continuous"}, font: {size: 13} },
-                physics: { barnesHut: { gravitationalConstant: -8000, centralGravity: 0.3 } },
+                nodes: { borderWidth: 4, shadow: true },
+                edges: { smooth: true, font: {size: 13, align: "middle"} },
+                physics: { enabled: true, barnesHut: { gravitationalConstant: -6000 } },
                 interaction: { dragNodes: true, zoomView: true, hover: true }
-            }
+            };
 
-            network = new vis.Network(container, { nodes: nodesDataSet, edges: edgesDataSet }, options)
+            network = new vis.Network(container, {nodes, edges}, options);
 
-            // 點擊編輯
-            network.on("click", params => {
+            // 左鍵點擊編輯
+            network.on("click", function(params) {
                 if (params.nodes.length) {
-                    const id = params.nodes[0]
-                    if (id === 0) editMyInfo()
-                    else editPerson(id)
+                    const id = params.nodes[0];
+                    editPerson(id);
                 }
-            })
+            });
 
-            // 右鍵選單
-            network.on("oncontext", params => {
-                params.event.preventDefault()
-                const menu = document.getElementById("context-menu")
-                menu.innerHTML = ""
-                menu.style.left = params.event.pageX + "px"
-                menu.style.top = params.event.pageY + "px"
-                menu.classList.remove("hidden")
+            // 右鍵點擊 → 連線
+            network.on("oncontext", function(params) {
+                params.event.preventDefault();
+                if (params.nodes.length) {
+                    connectFromId = params.nodes[0];
+                    showConnectModal();
+                }
+            });
 
-                const nodeIds = network.getNodeAt(params.pointer.DOM)
-                const edgeIds = network.getEdgeAt(params.pointer.DOM)
-
-                if (nodeIds !== undefined) {
-                    contextNodeId = nodeIds
-                    contextEdgeId = null
-                    if (nodeIds === 0) {
-                        menu.innerHTML = `<div class="px-4 py-2 hover:bg-slate-100 cursor-pointer" onclick="editMyInfo();hideContext()">編輯自己資料</div>`
-                    } else {
-                        menu.innerHTML = `
-                            <div class="px-4 py-2 hover:bg-slate-100 cursor-pointer" onclick="editPerson(${nodeIds});hideContext()">編輯</div>
-                            <div class="px-4 py-2 hover:bg-slate-100 cursor-pointer" onclick="deletePerson(${nodeIds});hideContext()">刪除</div>
-                            <div class="px-4 py-2 hover:bg-slate-100 cursor-pointer" onclick="showConnectMenu(${nodeIds});hideContext()">手動連線到...</div>
-                            <div class="px-4 py-2 hover:bg-slate-100 cursor-pointer text-red-500" onclick="removeEdgeToNode(${nodeIds});hideContext()">取消所有連線</div>
-                        `
+            // 右鍵邊線 → 刪除連線
+            network.on("oncontext", function(params) {
+                if (params.edges.length) {
+                    if (confirm("刪除呢條連線？")) {
+                        edges.remove(params.edges[0]);
+                        familyData.connections = familyData.connections.filter(c => 
+                            !(c.from === edges.get(params.edges[0]).from && c.to === edges.get(params.edges[0]).to)
+                        );
+                        saveToLocal();
                     }
-                } else if (edgeIds !== undefined) {
-                    contextEdgeId = edgeIds
-                    contextNodeId = null
-                    menu.innerHTML = `<div class="px-4 py-2 hover:bg-slate-100 cursor-pointer text-red-500" onclick="deleteEdge('${edgeIds}');hideContext()">刪除此連線</div>`
                 }
-            })
-
-            document.addEventListener("click", () => hideContext())
-        }
-
-        function hideContext() {
-            document.getElementById("context-menu").classList.add("hidden")
-        }
-
-        function showConnectMenu(targetId) {
-            let html = `<div class="px-4 py-2 font-medium text-slate-500">連線到：</div>`
-            html += `<div class="px-4 py-2 hover:bg-slate-100 cursor-pointer" onclick="connectTo(0, ${targetId});hideContext()">我（主角）</div>`
-            
-            familyData.relatives.forEach(p => {
-                if (p.id !== targetId) {
-                    html += `<div class="px-4 py-2 hover:bg-slate-100 cursor-pointer" onclick="connectTo(${p.id}, ${targetId});hideContext()">${p.name} (${p.relation})</div>`
-                }
-            })
-            document.getElementById("context-menu").innerHTML = html
-        }
-
-        function connectTo(fromId, toId) {
-            const edgeId = `e${fromId}-${toId}`
-            if (!edgesDataSet.get(edgeId)) {
-                const person = fromId === 0 ? familyData.myInfo : familyData.relatives.find(p => p.id === fromId)
-                edgesDataSet.add({
-                    id: edgeId,
-                    from: fromId,
-                    to: toId,
-                    label: person ? person.relation : "",
-                    font: {align: "middle", size: 13}
-                })
-            }
-        }
-
-        function removeEdgeToNode(nodeId) {
-            const edgesToRemove = edgesDataSet.get().filter(e => e.from === 0 && e.to === nodeId || e.from === nodeId && e.to === 0)
-            edgesToRemove.forEach(e => edgesDataSet.remove(e.id))
-        }
-
-        function deleteEdge(edgeId) {
-            edgesDataSet.remove(edgeId)
+            });
         }
 
         function updateNetwork() {
-            if (!network) return
-            nodesDataSet.clear()
-            edgesDataSet.clear()
-
-            nodesDataSet.add(getNode(familyData.myInfo))
-
-            familyData.relatives.forEach(p => {
-                nodesDataSet.add(getNode(p))
-                // 預設連線到主角
-                edgesDataSet.add({
-                    id: `e0-${p.id}`,
-                    from: 0,
-                    to: p.id,
-                    label: p.relation,
-                    font: {align: "middle", size: 13},
-                    color: {color: "#64748b"}
-                })
-            })
+            if (!network) return;
+            nodes.clear();
+            edges.clear();
+            familyData.people.forEach(p => nodes.add(getNode(p)));
+            familyData.connections.forEach(conn => {
+                edges.add({from: conn.from, to: conn.to, label: conn.label, arrows: "to"});
+            });
         }
 
-        function renderRelativesList() {
-            const container = document.getElementById("relatives-list")
-            let html = `<div class="space-y-3">`
+        function renderList() {
+            const container = document.getElementById("relatives-list");
+            let html = "";
+            familyData.people.forEach(person => {
+                html += `
+                <div class="bg-slate-50 hover:bg-white border border-slate-200 rounded-3xl p-5 flex gap-4 items-start group">
+                    <div class="text-4xl">${person.gender === "男" ? "👦" : person.gender === "女" ? "👧" : "🧍"}</div>
+                    <div class="flex-1">
+                        <div class="font-semibold">${person.name || person.relation}</div>
+                        <div class="text-amber-600 text-sm">${person.relation}</div>
+                        <div class="text-xs text-emerald-600">${getAgeZodiac(person.birthYear)}</div>
+                        ${person.notes ? `<div class="text-xs text-slate-500 mt-1 line-clamp-2">${person.notes}</div>` : ''}
+                    </div>
+                    <div class="opacity-0 group-hover:opacity-100 flex flex-col gap-1">
+                        <button onclick="editPerson(${person.id});event.stopImmediatePropagation()" class="px-4 py-1 text-xs bg-white border rounded-2xl">編輯</button>
+                        ${person.id !== 0 ? `<button onclick="deletePerson(${person.id});event.stopImmediatePropagation()" class="px-4 py-1 text-xs text-red-500">刪除</button>` : ''}
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html || `<div class="text-center py-12 text-slate-400">未有親戚資料，點擊新增開始認親</div>`;
+        }
+
+        function saveToLocal() {
+            localStorage.setItem("familyData_v2", JSON.stringify(familyData));
+        }
+
+        function loadFromLocal() {
+            const saved = localStorage.getItem("familyData_v2");
+            if (saved) familyData = JSON.parse(saved);
             
-            if (familyData.relatives.length === 0) {
-                html += `<div class="bg-slate-50 border border-dashed border-slate-300 rounded-3xl p-8 text-center text-slate-400">未有親戚<br>按「新增親戚」開始</div>`
-            } else {
-                familyData.relatives.forEach(p => {
-                    html += `
-                    <div class="bg-slate-50 hover:bg-white border border-slate-200 rounded-3xl px-5 py-4 group flex items-center justify-between">
-                        <div class="flex items-center gap-x-4">
-                            <div class="text-4xl">${p.gender === "男" ? "👦" : p.gender === "女" ? "👧" : "🧍"}</div>
-                            <div>
-                                <div class="font-semibold text-lg">${p.name}</div>
-                                <div class="text-red-500 text-sm">${p.relation}</div>
-                                <div class="text-emerald-600 text-xs">${getAgeZodiac(p)}</div>
-                            </div>
-                            ${p.notes ? `<div class="text-xs text-slate-400 ml-4 line-clamp-2">${p.notes}</div>` : ''}
-                        </div>
-                        <div class="flex gap-x-2 opacity-0 group-hover:opacity-100">
-                            <button onclick="editPerson(${p.id});event.stopImmediatePropagation()" class="px-4 py-2 text-sm bg-white border rounded-2xl hover:bg-slate-100">編輯</button>
-                            <button onclick="deletePerson(${p.id});event.stopImmediatePropagation()" class="px-4 py-2 text-sm text-red-500 hover:bg-red-50 rounded-2xl">刪除</button>
-                        </div>
-                    </div>`
-                })
+            // 確保主角存在
+            if (!familyData.people || familyData.people.length === 0) {
+                familyData.people = [{
+                    id: 0,
+                    relation: "我",
+                    name: "我",
+                    gender: "",
+                    birthYear: null,
+                    notes: ""
+                }];
             }
-            container.innerHTML = html + `</div>`
-        }
-
-        function saveToLocalStorage() {
-            localStorage.setItem("familyData_v2", JSON.stringify(familyData))
-        }
-
-        function loadFromLocalStorage() {
-            const saved = localStorage.getItem("familyData_v2")
-            if (saved) familyData = JSON.parse(saved)
-        }
-
-        function updateRelationSuggestions() {
-            const cat = document.getElementById("input-category").value
-            const datalist = document.getElementById("relation-suggestions")
-            datalist.innerHTML = ""
-            categories[cat].forEach(rel => {
-                const opt = document.createElement("option")
-                opt.value = rel
-                datalist.appendChild(opt)
-            })
+            if (!familyData.connections) familyData.connections = [];
         }
 
         function showAddModal() {
-            currentEditId = null
-            document.getElementById("modal-title").textContent = "新增親戚"
-            document.getElementById("save-btn").textContent = "儲存親戚"
+            currentEditId = null;
+            document.getElementById("modal-title").textContent = "新增親戚";
+            document.getElementById("save-btn").textContent = "儲存親戚";
             
-            document.getElementById("input-category").value = "0"
-            updateRelationSuggestions()
-            document.getElementById("input-relation").value = ""
-            document.getElementById("input-name").value = ""
-            document.getElementById("input-birthyear").value = ""
-            document.getElementById("input-notes").value = ""
-            document.getElementById("input-gender").value = ""
+            document.getElementById("input-relation").value = "";
+            document.getElementById("input-name").value = "";
+            document.getElementById("input-birthyear").value = "";
+            document.getElementById("input-notes").value = "";
+            document.getElementById("input-gender").value = "";
+            document.querySelectorAll(".gender-option").forEach(el => el.classList.remove("border-amber-400","ring-2"));
             
-            document.querySelectorAll(".gender-option").forEach(el => el.classList.remove("border-red-400", "ring-2", "ring-red-300"))
-            document.getElementById("preview-age-zodiac").innerHTML = ""
-            document.getElementById("modal").classList.remove("hidden")
-            document.getElementById("modal").classList.add("flex")
+            document.getElementById("modal").classList.remove("hidden");
+            document.getElementById("modal").classList.add("flex");
         }
 
         function hideModal() {
-            document.getElementById("modal").classList.add("hidden")
-            document.getElementById("modal").classList.remove("flex")
+            document.getElementById("modal").classList.add("hidden");
+            document.getElementById("modal").classList.remove("flex");
         }
 
         function selectGender(el) {
-            document.querySelectorAll(".gender-option").forEach(e => e.classList.remove("border-red-400", "ring-2", "ring-red-300"))
-            el.classList.add("border-red-400", "ring-2", "ring-red-300")
-            document.getElementById("input-gender").value = el.dataset.value
-        }
-
-        function previewAgeZodiac() {
-            const input = document.getElementById("input-birthyear")
-            const preview = document.getElementById("preview-age-zodiac")
-            input.oninput = () => {
-                if (!input.value) { preview.innerHTML = ""; return }
-                const temp = {birthYear: parseInt(input.value)}
-                preview.innerHTML = `預覽： <span class="font-semibold">${getAgeZodiac(temp)}</span>`
-            }
+            document.querySelectorAll(".gender-option").forEach(e => e.classList.remove("border-amber-400","ring-2","ring-amber-300"));
+            el.classList.add("border-amber-400","ring-2","ring-amber-300");
+            document.getElementById("input-gender").value = el.dataset.value;
         }
 
         function savePerson() {
-            const category = document.getElementById("input-category").value
-            const relation = document.getElementById("input-relation").value.trim()
-            const name = document.getElementById("input-name").value.trim()
-            const gender = document.getElementById("input-gender").value
-            const birthYear = document.getElementById("input-birthyear").value ? parseInt(document.getElementById("input-birthyear").value) : null
-            const notes = document.getElementById("input-notes").value.trim()
+            const relation = document.getElementById("input-relation").value.trim();
+            const name = document.getElementById("input-name").value.trim();
+            const gender = document.getElementById("input-gender").value;
+            const birthYear = document.getElementById("input-birthyear").value ? parseInt(document.getElementById("input-birthyear").value) : null;
+            const notes = document.getElementById("input-notes").value.trim();
 
-            if (!relation || !name) {
-                alert("請填寫稱呼同名字")
-                return
+            if (!relation && !name) {
+                alert("請至少填寫稱呼或名字");
+                return;
             }
 
             if (currentEditId === null) {
-                const newPerson = { id: Date.now(), category, relation, name, gender, birthYear, notes }
-                familyData.relatives.push(newPerson)
+                // 新增
+                const newId = familyData.people.length > 0 ? Math.max(...familyData.people.map(p => p.id)) + 1 : 1;
+                familyData.people.push({
+                    id: newId,
+                    relation: relation || name,
+                    name: name || relation,
+                    gender,
+                    birthYear,
+                    notes
+                });
             } else {
-                const person = familyData.relatives.find(p => p.id === currentEditId)
+                // 編輯
+                const person = familyData.people.find(p => p.id === currentEditId);
                 if (person) {
-                    person.category = category
-                    person.relation = relation
-                    person.name = name
-                    person.gender = gender
-                    person.birthYear = birthYear
-                    person.notes = notes
+                    person.relation = relation || name;
+                    person.name = name || relation;
+                    person.gender = gender;
+                    person.birthYear = birthYear;
+                    person.notes = notes;
                 }
             }
 
-            saveToLocalStorage()
-            updateNetwork()
-            renderRelativesList()
-            hideModal()
+            saveToLocal();
+            updateNetwork();
+            renderList();
+            hideModal();
         }
 
         function editPerson(id) {
-            const person = familyData.relatives.find(p => p.id === id)
-            if (!person) return
-            currentEditId = id
-            document.getElementById("modal-title").textContent = "編輯親戚"
-            document.getElementById("save-btn").textContent = "更新資料"
+            const person = familyData.people.find(p => p.id === id);
+            if (!person) return;
 
-            document.getElementById("input-category").value = person.category || "0"
-            updateRelationSuggestions()
-            document.getElementById("input-relation").value = person.relation
-            document.getElementById("input-name").value = person.name
-            document.getElementById("input-birthyear").value = person.birthYear || ""
-            document.getElementById("input-notes").value = person.notes || ""
-            document.getElementById("input-gender").value = person.gender || ""
+            currentEditId = id;
+            document.getElementById("modal-title").textContent = "編輯資料";
+            document.getElementById("save-btn").textContent = "更新";
+
+            document.getElementById("input-relation").value = person.relation || "";
+            document.getElementById("input-name").value = person.name || "";
+            document.getElementById("input-birthyear").value = person.birthYear || "";
+            document.getElementById("input-notes").value = person.notes || "";
+            document.getElementById("input-gender").value = person.gender || "";
 
             document.querySelectorAll(".gender-option").forEach(el => {
-                el.classList.toggle("border-red-400", "ring-2", "ring-red-300", el.dataset.value === person.gender)
-            })
+                el.classList.toggle("border-amber-400", el.dataset.value === person.gender);
+            });
 
-            document.getElementById("modal").classList.remove("hidden")
-            document.getElementById("modal").classList.add("flex")
+            document.getElementById("modal").classList.remove("hidden");
+            document.getElementById("modal").classList.add("flex");
         }
 
         function deletePerson(id) {
-            if (!confirm("確定刪除？")) return
-            familyData.relatives = familyData.relatives.filter(p => p.id !== id)
-            saveToLocalStorage()
-            updateNetwork()
-            renderRelativesList()
+            if (id === 0) return alert("主角唔可以刪除");
+            if (!confirm("確定刪除？")) return;
+            familyData.people = familyData.people.filter(p => p.id !== id);
+            familyData.connections = familyData.connections.filter(c => c.from !== id && c.to !== id);
+            saveToLocal();
+            updateNetwork();
+            renderList();
         }
 
-        function editMyInfo() {
-            const birth = prompt("自己出生年份（可留空）\n目前：" + (familyData.myInfo.birthYear || "未填"), familyData.myInfo.birthYear || "")
-            if (birth === null) return
-            familyData.myInfo.birthYear = birth ? parseInt(birth) : null
-            familyData.myInfo.notes = prompt("自己備註", familyData.myInfo.notes || "") || ""
-            saveToLocalStorage()
-            updateMyInfoCard()
-            updateNetwork()
+        // ==================== 連線功能 ====================
+        function showConnectModal() {
+            const fromPerson = familyData.people.find(p => p.id === connectFromId);
+            document.getElementById("connect-from-name").innerHTML = `從 <b>${fromPerson.name || fromPerson.relation}</b> 連線到 →`;
+
+            const select = document.getElementById("connect-to-id");
+            select.innerHTML = `<option value="">選擇親戚...</option>`;
+            
+            familyData.people.forEach(p => {
+                if (p.id !== connectFromId) {
+                    select.innerHTML += `<option value="${p.id}">${p.name || p.relation}</option>`;
+                }
+            });
+
+            document.getElementById("connect-label").value = "";
+            document.getElementById("connect-modal").classList.remove("hidden");
+            document.getElementById("connect-modal").classList.add("flex");
         }
 
-        function updateMyInfoCard() {
-            document.getElementById("my-name-display").textContent = familyData.myInfo.name
-            document.getElementById("my-age-zodiac").innerHTML = familyData.myInfo.birthYear 
-                ? `<span class="text-emerald-600">${getAgeZodiac(familyData.myInfo)}</span>` 
-                : "未填出生年份"
+        function hideConnectModal() {
+            document.getElementById("connect-modal").classList.add("hidden");
+            document.getElementById("connect-modal").classList.remove("flex");
         }
 
+        function addConnection() {
+            const toId = parseInt(document.getElementById("connect-to-id").value);
+            const label = document.getElementById("connect-label").value.trim();
+            if (!toId) return alert("請選擇連線對象");
+
+            // 避免重複連線
+            const exists = familyData.connections.some(c => 
+                (c.from === connectFromId && c.to === toId) || (c.from === toId && c.to === connectFromId)
+            );
+            if (exists) {
+                alert("已經有連線啦！");
+                hideConnectModal();
+                return;
+            }
+
+            familyData.connections.push({
+                from: connectFromId,
+                to: toId,
+                label: label || "關係"
+            });
+
+            saveToLocal();
+            updateNetwork();
+            hideConnectModal();
+        }
+
+        // ==================== 匯出匯入 ====================
         function exportData() {
-            const dataStr = JSON.stringify(familyData, null, 2)
-            const blob = new Blob([dataStr], {type: "application/json"})
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement("a")
-            a.href = url
-            a.download = `拜山關係圖_${new Date().toISOString().slice(0,10)}.json`
-            a.click()
-            URL.revokeObjectURL(url)
+            const str = JSON.stringify(familyData, null, 2);
+            const blob = new Blob([str], {type: "application/json"});
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `認親認戚圖_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
         }
 
         function importData(e) {
-            const file = e.target.files[0]
-            if (!file) return
-            const reader = new FileReader()
-            reader.onload = ev => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
                 try {
-                    const imported = JSON.parse(ev.target.result)
-                    if (imported.myInfo && Array.isArray(imported.relatives)) {
-                        familyData = imported
-                        saveToLocalStorage()
-                        initNetwork()
-                        renderRelativesList()
-                        updateMyInfoCard()
-                        alert("匯入成功！")
-                    }
-                } catch(err) { alert("匯入失敗") }
-            }
-            reader.readAsText(file)
+                    familyData = JSON.parse(ev.target.result);
+                    if (!familyData.people) familyData.people = [];
+                    if (!familyData.connections) familyData.connections = [];
+                    saveToLocal();
+                    updateNetwork();
+                    renderList();
+                    alert("匯入成功！");
+                } catch(err) {
+                    alert("檔案格式錯誤");
+                }
+            };
+            reader.readAsText(file);
         }
 
         function clearAllData() {
-            if (confirm("確定清空所有資料？")) {
-                localStorage.removeItem("familyData_v2")
-                location.reload()
+            if (confirm("清空所有資料？呢個動作冇得反悔！")) {
+                localStorage.removeItem("familyData_v2");
+                location.reload();
             }
         }
 
-        // 啟動
-        function initialize() {
-            loadFromLocalStorage()
-            initNetwork()
-            renderRelativesList()
-            updateMyInfoCard()
-            previewAgeZodiac()
+        // 即時預覽年齡生肖
+        function setupPreview() {
+            const input = document.getElementById("input-birthyear");
+            const preview = document.getElementById("preview-age-zodiac");
+            input.addEventListener("input", () => {
+                preview.textContent = input.value ? getAgeZodiac(parseInt(input.value)) : "";
+            });
         }
 
-        window.onload = initialize
+        // 初始化
+        window.onload = function() {
+            loadFromLocal();
+            initNetwork();
+            renderList();
+            setupPreview();
+
+            // 預設填充一些常見稱呼到 datalist
+            const datalist = document.getElementById("relation-suggestions");
+            categories.forEach(cat => {
+                cat.suggestions.forEach(s => {
+                    const opt = document.createElement("option");
+                    opt.value = s;
+                    datalist.appendChild(opt);
+                });
+            });
+        };
     </script>
 </body>
 </html>
