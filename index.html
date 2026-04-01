@@ -15,7 +15,7 @@
             border: 2px solid #e5e7eb;
             border-radius: 16px;
             background: #f8fafc;
-            touch-action: none; /* 提升手機觸控流暢度 */
+            touch-action: none;
         }
         .modal {
             animation: modalPop 0.3s ease-out;
@@ -24,7 +24,6 @@
             from { transform: scale(0.95); opacity: 0; }
             to { transform: scale(1); opacity: 1; }
         }
-        /* 手機優化提示 */
         .mobile-hint {
             animation: pulse 2s infinite;
         }
@@ -32,7 +31,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800">
     <div class="max-w-7xl mx-auto px-4 py-6">
-        <!-- 頂部導航 -->
+        <!-- 頂部導航（只保留標題 + 主角卡） -->
         <div class="flex items-center justify-between mb-8 bg-white rounded-2xl shadow-sm border border-slate-200 px-6 py-4">
             <div class="flex items-center gap-x-3">
                 <div class="w-10 h-10 bg-red-500 text-white rounded-2xl flex items-center justify-center text-2xl">👪</div>
@@ -42,33 +41,13 @@
                 </div>
             </div>
             
-            <div class="flex items-center gap-x-4">
-                <!-- 自己資料卡（主角） -->
-                <div onclick="editPerson(0)" class="flex items-center gap-x-2 bg-emerald-100 hover:bg-emerald-200 transition-colors rounded-2xl px-4 py-2 cursor-pointer">
-                    <span class="text-2xl">👑</span>
-                    <div>
-                        <div id="my-name-display" class="font-semibold">我（主角）</div>
-                        <div id="my-age-zodiac" class="text-xs text-slate-500"></div>
-                    </div>
+            <!-- 自己資料卡（主角） -->
+            <div onclick="editPerson(0)" class="flex items-center gap-x-2 bg-emerald-100 hover:bg-emerald-200 transition-colors rounded-2xl px-4 py-2 cursor-pointer">
+                <span class="text-2xl">👑</span>
+                <div>
+                    <div id="my-name-display" class="font-semibold">我（主角）</div>
+                    <div id="my-age-zodiac" class="text-xs text-slate-500"></div>
                 </div>
-
-                <!-- 匯出 / 匯入 -->
-                <button onclick="exportData()" 
-                        class="flex items-center gap-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-2xl font-medium text-sm transition-colors">
-                    <span class="text-lg">📤</span>
-                    匯出 JSON
-                </button>
-                <label onclick="document.getElementById('import-input').click()"
-                       class="flex items-center gap-x-2 bg-slate-700 hover:bg-slate-800 text-white px-5 py-2.5 rounded-2xl font-medium text-sm transition-colors cursor-pointer">
-                    <span class="text-lg">📥</span>
-                    匯入 JSON
-                    <input id="import-input" type="file" accept=".json" class="hidden" onchange="importData(event)">
-                </label>
-
-                <button onclick="clearAllData()" 
-                        class="text-red-500 hover:text-red-600 flex items-center gap-x-1 text-sm font-medium">
-                    <span>🗑️</span> 清空全部
-                </button>
             </div>
         </div>
 
@@ -83,7 +62,7 @@
                     <div class="text-xs text-slate-400 flex items-center gap-x-1">
                         <div class="w-3 h-3 bg-blue-500 rounded-full"></div> 男
                         <div class="w-3 h-3 bg-pink-500 rounded-full"></div> 女
-                        <span class="ml-2">點擊節點編輯 • <span class="mobile-hint">長按節點連線其他人</span></span>
+                        <span class="ml-2">點擊節點編輯 • <span class="mobile-hint">長按 / 右鍵節點管理連線（新增或取消）</span></span>
                     </div>
                 </div>
                 <div id="mynetwork" class="shadow-inner"></div>
@@ -105,6 +84,25 @@
                     <!-- JS 動態生成 -->
                 </div>
 
+                <!-- 匯出 / 匯入 / 清空（移到最下方） -->
+                <div class="mt-6 pt-6 border-t border-slate-200 flex flex-wrap items-center gap-3">
+                    <button onclick="exportData()" 
+                            class="flex-1 sm:flex-none flex items-center justify-center gap-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl font-medium text-sm transition-colors">
+                        <span class="text-lg">📤</span>
+                        匯出 JSON
+                    </button>
+                    <label onclick="document.getElementById('import-input').click()"
+                           class="flex-1 sm:flex-none flex items-center justify-center gap-x-2 bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-2xl font-medium text-sm transition-colors cursor-pointer">
+                        <span class="text-lg">📥</span>
+                        匯入 JSON
+                        <input id="import-input" type="file" accept=".json" class="hidden" onchange="importData(event)">
+                    </label>
+                    <button onclick="clearAllData()" 
+                            class="flex-1 sm:flex-none text-red-500 hover:text-red-600 hover:bg-red-50 px-5 py-3 rounded-2xl font-medium text-sm transition-colors flex items-center justify-center gap-x-1">
+                        <span>🗑️</span> 清空全部
+                    </button>
+                </div>
+
                 <div class="text-xs text-slate-400 mt-4 text-center">
                     資料自動儲存到瀏覽器<br>
                     下次拜山、過年、飲宴依然有齊全部人物 + 連線
@@ -121,16 +119,14 @@
             <h3 id="modal-title" class="text-2xl font-bold mb-6">新增親戚</h3>
             
             <div class="space-y-6">
-                <!-- 關係（使用 optgroup 分類） -->
                 <div>
                     <label class="block text-sm font-medium mb-2">親戚關係（由你角度）</label>
                     <select id="input-relation" 
                             class="w-full border border-slate-300 focus:border-red-400 rounded-2xl px-4 py-3 text-lg focus:outline-none">
-                        <!-- JS 動態填入 optgroup -->
+                        <!-- JS 動態填入 -->
                     </select>
                 </div>
 
-                <!-- 名字 -->
                 <div>
                     <label class="block text-sm font-medium mb-2">名字 / 稱呼</label>
                     <input id="input-name" type="text" 
@@ -139,7 +135,6 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                    <!-- 性別 -->
                     <div>
                         <label class="block text-sm font-medium mb-2">性別</label>
                         <div class="flex gap-x-4">
@@ -155,7 +150,6 @@
                         <input type="hidden" id="input-gender">
                     </div>
 
-                    <!-- 出生年份 -->
                     <div>
                         <label class="block text-sm font-medium mb-2">出生年份（自動計年齡＋生肖）</label>
                         <input id="input-birthyear" type="number" min="1900" max="2030" 
@@ -165,7 +159,6 @@
                     </div>
                 </div>
 
-                <!-- 備註 -->
                 <div>
                     <label class="block text-sm font-medium mb-2">備註（任意寫資料，例如電話、特徵）</label>
                     <textarea id="input-notes" rows="3"
@@ -188,25 +181,21 @@
         </div>
     </div>
 
-    <!-- 新增連線 Modal -->
+    <!-- 連線管理 Modal（新增 + 取消連線） -->
     <div id="connect-modal" onclick="if(event.target.id==='connect-modal')hideConnectModal()" 
          class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
         <div onclick="event.stopImmediatePropagation()" 
              class="modal bg-white w-full max-w-lg mx-4 rounded-3xl shadow-2xl p-8">
-            <h3 id="connect-title" class="text-2xl font-bold mb-6">新增人物連線</h3>
+            <h3 id="connect-title" class="text-2xl font-bold mb-6">管理連線</h3>
             
-            <div id="connect-content" class="space-y-6">
-                <!-- JS 動態填入 -->
+            <div id="connect-content" class="space-y-8">
+                <!-- JS 動態生成：已連線 + 新增表單 -->
             </div>
 
             <div class="flex gap-x-3 mt-8">
                 <button onclick="hideConnectModal()" 
                         class="flex-1 py-4 text-slate-500 font-medium border border-slate-300 rounded-2xl hover:bg-slate-100 transition-colors">
-                    取消
-                </button>
-                <button onclick="saveConnection()" 
-                        class="flex-1 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-2xl transition-colors">
-                    儲存連線
+                    關閉
                 </button>
             </div>
         </div>
@@ -224,26 +213,41 @@
                 notes: ""
             },
             relatives: [],
-            connections: []
+            connections: []     // {from, to, label}
         }
 
         let network = null
         let nodesDataSet = null
         let edgesDataSet = null
         let currentEditId = null
-        let currentSourceId = null
+        let currentSourceId = null   // 目前正在管理連線的節點 ID
 
         // 生肖資料
         const zodiacList = ["鼠", "牛", "虎", "兔", "龍", "蛇", "馬", "羊", "猴", "雞", "狗", "豬"]
         const zodiacEmoji = ["🐭", "🐮", "🐯", "🐰", "🐲", "🐍", "🐴", "🐑", "🐒", "🐔", "🐶", "🐷"]
 
-        // ==================== 親戚關係五類別 ====================
+        // ==================== 親戚關係五類別（已更新） ====================
         const relationCategories = [
-            { label: "0. 我們一家", options: ["主角", "阿爸", "阿媽", "阿哥", "細佬", "家姐", "阿妹", "老公", "老婆", "仔仔", "女女"] },
-            { label: "1. 阿爸嗰邊（父系）", options: ["阿爺", "阿嫲", "伯公（兄）", "伯婆", "叔公（弟）", "叔婆", "姑婆", "姑公", "伯父", "伯娘", "阿叔", "嬸嬸", "姑姐", "姑丈", "堂兄", "堂姐", "堂弟", "堂妹", "表兄", "表姐", "表弟", "表妹"] },
-            { label: "2. 阿媽嗰邊（母系）", options: ["外公（公公）", "外嫲（婆婆）", "外伯公", "外伯婆", "外叔公", "外叔婆", "姨婆", "姨公", "舅父", "舅母 / 妗母", "姨媽（大）", "姨姨（細）", "姨丈", "表兄", "表姐", "表弟", "表妹"] },
-            { label: "3. 老婆/老公阿爸嗰邊（岳父/老爺系）", options: ["岳父 / 外父 / 老爺", "大舅（兄）", "大舅奶", "舅仔（弟）", "小舅奶", "大姨（姊）", "襟兄", "姨仔（妹）", "襟弟"] },
-            { label: "4. 老婆阿媽嗰邊（岳母系）", options: ["岳母 / 外母 / 奶奶", "外舅父", "外舅母", "外姨媽", "外姨丈"] }
+            {
+                label: "0. 我們一家",
+                options: ["主角", "阿爸", "阿媽", "阿哥", "細佬", "家姐", "阿妹", "老公", "老婆", "囝囝", "囡囡", "夫妻", "父子", "父女", "母子", "母女", "兄弟", "兄妹", "姐妹", "姐弟"]
+            },
+            {
+                label: "1. 阿爸嗰邊（父系）",
+                options: ["阿爺", "阿嫲", "伯公（兄）", "伯婆", "叔公（弟）", "叔婆", "姑婆", "姑公", "伯父", "伯娘", "阿叔", "嬸嬸", "姑姐", "姑丈", "堂兄", "堂姐", "堂弟", "堂妹", "表兄", "表姐", "表弟", "表妹"]
+            },
+            {
+                label: "2. 阿媽嗰邊（母系）",
+                options: ["外公（公公）", "外嫲（婆婆）", "外伯公", "外伯婆", "外叔公", "外叔婆", "姨婆", "姨公", "舅父", "舅母 / 妗母", "姨媽（大）", "姨姨（細）", "姨丈", "表兄", "表姐", "表弟", "表妹"]
+            },
+            {
+                label: "3. 老婆/老公阿爸嗰邊（岳父/老爺系）",
+                options: ["岳父 / 外父 / 老爺", "大舅（兄）", "大舅奶", "舅仔（弟）", "小舅奶", "大姨（姊）", "襟兄", "姨仔（妹）", "襟弟"]
+            },
+            {
+                label: "4. 老婆阿媽嗰邊（岳母系）",
+                options: ["岳母 / 外母 / 奶奶", "外舅父", "外舅母", "外姨媽", "外姨丈"]
+            }
         ]
 
         function getRelationOptionsHTML() {
@@ -304,6 +308,7 @@
             nodesDataSet.add(getNode(familyData.myInfo))
             familyData.relatives.forEach(person => nodesDataSet.add(getNode(person)))
 
+            // 自動連線（主角 → 親戚）—— 無方向箭頭
             familyData.relatives.forEach(person => {
                 edgesDataSet.add({
                     from: 0,
@@ -314,6 +319,7 @@
                 })
             })
 
+            // 手動連線 —— 加上方向箭頭（綠色）
             familyData.connections.forEach(conn => {
                 edgesDataSet.add({
                     from: conn.from,
@@ -321,7 +327,8 @@
                     label: conn.label,
                     font: { align: "middle", size: 13, color: "#10b981" },
                     color: { color: "#10b981", highlight: "#10b981" },
-                    smooth: { type: "curvedCW", roundness: 0.2 }
+                    smooth: { type: "curvedCW", roundness: 0.2 },
+                    arrows: { to: { enabled: true, scaleFactor: 0.8 } }
                 })
             })
 
@@ -343,15 +350,14 @@
 
             network = new vis.Network(container, { nodes: nodesDataSet, edges: edgesDataSet }, options)
 
-            // 左鍵點擊編輯
+            // 左鍵點擊 → 編輯
             network.on("click", function (params) {
                 if (params.nodes.length > 0) {
-                    const clickedId = params.nodes[0]
-                    editPerson(clickedId)
+                    editPerson(params.nodes[0])
                 }
             })
 
-            // 桌面右鍵連線（保留）
+            // 桌面右鍵
             container.addEventListener("contextmenu", function (e) {
                 e.preventDefault()
                 const nodeId = network.getNodeAt({ x: e.offsetX, y: e.offsetY })
@@ -360,21 +366,17 @@
                 }
             })
 
-            // ==================== 手機長按連線（新增） ====================
+            // 手機長按連線
             let longPressTimer = null
-            const LONG_PRESS_DURATION = 650   // 長按 0.65 秒觸發
+            const LONG_PRESS_DURATION = 650
 
             function getPointerPosition(e) {
                 const rect = container.getBoundingClientRect()
                 const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0)
                 const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0)
-                return {
-                    x: clientX - rect.left,
-                    y: clientY - rect.top
-                }
+                return { x: clientX - rect.left, y: clientY - rect.top }
             }
 
-            // 觸摸開始
             container.addEventListener("touchstart", function (e) {
                 const pos = getPointerPosition(e)
                 const nodeId = network.getNodeAt(pos)
@@ -385,7 +387,6 @@
                 }
             }, { passive: true })
 
-            // 觸摸結束或移動 → 取消長按
             function cancelLongPress() {
                 if (longPressTimer) {
                     clearTimeout(longPressTimer)
@@ -421,7 +422,8 @@
                     label: conn.label,
                     font: { align: "middle", size: 13, color: "#10b981" },
                     color: { color: "#10b981", highlight: "#10b981" },
-                    smooth: { type: "curvedCW", roundness: 0.2 }
+                    smooth: { type: "curvedCW", roundness: 0.2 },
+                    arrows: { to: { enabled: true, scaleFactor: 0.8 } }
                 })
             })
         }
@@ -511,7 +513,6 @@
             currentEditId = null
             document.getElementById("modal-title").textContent = "新增親戚"
             document.getElementById("save-btn").textContent = "儲存親戚"
-            
             populateRelationSelect()
             
             document.getElementById("input-name").value = ""
@@ -519,10 +520,7 @@
             document.getElementById("input-notes").value = ""
             document.getElementById("input-gender").value = ""
             
-            document.querySelectorAll(".gender-option").forEach(el => {
-                el.classList.remove("border-red-400", "ring-2", "ring-red-300")
-            })
-            
+            document.querySelectorAll(".gender-option").forEach(el => el.classList.remove("border-red-400", "ring-2", "ring-red-300"))
             document.getElementById("preview-age-zodiac").innerHTML = ""
             document.getElementById("modal").classList.remove("hidden")
             document.getElementById("modal").classList.add("flex")
@@ -549,8 +547,7 @@
                     return
                 }
                 const year = parseInt(this.value)
-                const tempPerson = { birthYear: year }
-                preview.innerHTML = `預覽： <span class="font-semibold">${getAgeZodiac(tempPerson)}</span>`
+                preview.innerHTML = `預覽： <span class="font-semibold">${getAgeZodiac({birthYear: year})}</span>`
             }
         }
 
@@ -558,9 +555,7 @@
             const relation = document.getElementById("input-relation").value.trim()
             const name = document.getElementById("input-name").value.trim()
             const gender = document.getElementById("input-gender").value
-            const birthYear = document.getElementById("input-birthyear").value 
-                ? parseInt(document.getElementById("input-birthyear").value) 
-                : null
+            const birthYear = document.getElementById("input-birthyear").value ? parseInt(document.getElementById("input-birthyear").value) : null
             const notes = document.getElementById("input-notes").value.trim()
 
             if (!relation || !name) {
@@ -569,15 +564,14 @@
             }
 
             if (currentEditId === null) {
-                const newPerson = {
+                familyData.relatives.push({
                     id: Date.now(),
                     relation: relation,
                     name: name,
                     gender: gender,
                     birthYear: birthYear,
                     notes: notes
-                }
-                familyData.relatives.push(newPerson)
+                })
             } else if (currentEditId === 0) {
                 familyData.myInfo.relation = relation
                 familyData.myInfo.name = name
@@ -608,13 +602,10 @@
             if (!person) return
 
             currentEditId = id
-            document.getElementById("modal-title").textContent = (id === 0) 
-                ? "編輯自己（主角）資料" 
-                : "編輯親戚"
+            document.getElementById("modal-title").textContent = (id === 0) ? "編輯自己（主角）資料" : "編輯親戚"
             document.getElementById("save-btn").textContent = "更新資料"
 
             populateRelationSelect()
-
             document.getElementById("input-relation").value = person.relation || (id === 0 ? "自己" : "")
             document.getElementById("input-name").value = person.name
             document.getElementById("input-birthyear").value = person.birthYear || ""
@@ -650,12 +641,10 @@
                 : "未填出生年份"
         }
 
-        // ==================== 連線功能 ====================
+        // ==================== 連線管理（含新增 + 取消） ====================
         function getOtherPeopleOptions(sourceId) {
             let html = `<option value="">-- 選擇目標人物 --</option>`
-            if (sourceId !== 0) {
-                html += `<option value="0">${familyData.myInfo.name} (自己 / 主角)</option>`
-            }
+            if (sourceId !== 0) html += `<option value="0">${familyData.myInfo.name} (自己 / 主角)</option>`
             familyData.relatives.forEach(p => {
                 if (p.id !== sourceId) {
                     html += `<option value="${p.id}">${p.name} (${p.relation})</option>`
@@ -664,15 +653,51 @@
             return html
         }
 
-        function showConnectionModal(sourceId) {
+        function getConnectContentHTML(sourceId) {
             const sourcePerson = getPersonById(sourceId)
-            if (!sourcePerson) return
+            let html = `<div class="space-y-8">`
 
-            currentSourceId = sourceId
+            // 1. 已連線列表（可取消）
+            const relatedConns = familyData.connections.filter(c => c.from === sourceId || c.to === sourceId)
+            html += `<div>`
+            html += `<label class="block text-sm font-medium mb-3 text-emerald-700">已連線的人物（點擊取消連線）</label>`
+            
+            if (relatedConns.length > 0) {
+                html += `<div class="space-y-2">`
+                relatedConns.forEach(conn => {
+                    let otherId, arrow
+                    if (conn.from === sourceId) {
+                        otherId = conn.to
+                        arrow = "→"
+                    } else {
+                        otherId = conn.from
+                        arrow = "←"
+                    }
+                    const other = getPersonById(otherId)
+                    const otherName = other ? other.name : "未知"
+                    html += `
+                    <div class="flex items-center justify-between bg-slate-50 px-4 py-3 rounded-2xl border border-slate-200">
+                        <div class="flex items-center gap-x-3">
+                            <span class="text-xl">${arrow}</span>
+                            <div>
+                                <span class="font-medium">${otherName}</span>
+                                <span class="ml-2 text-xs text-slate-400">(${conn.label})</span>
+                            </div>
+                        </div>
+                        <button onclick="deleteConnection(${conn.from}, ${conn.to}); event.stopImmediatePropagation()" 
+                                class="text-red-500 text-sm font-medium px-4 py-1 rounded-xl hover:bg-red-50">取消連線</button>
+                    </div>`
+                })
+                html += `</div>`
+            } else {
+                html += `<div class="text-xs italic text-slate-400 bg-slate-50 rounded-2xl p-4">暫無連線</div>`
+            }
+            html += `</div>`
 
-            document.getElementById("connect-title").innerHTML = `從 <span class="text-red-500 font-semibold">${sourcePerson.name}</span> 連線到其他人`
-
-            const contentHTML = `
+            // 2. 新增連線
+            html += `
+            <div>
+                <h4 class="text-sm font-semibold mb-4 flex items-center gap-x-2"><span class="text-emerald-500 text-xl">➕</span> 新增連線</h4>
                 <div class="space-y-6">
                     <div>
                         <label class="block text-sm font-medium mb-2">目標人物</label>
@@ -686,13 +711,22 @@
                             ${getRelationOptionsHTML()}
                         </select>
                     </div>
-                    <div class="text-xs bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-emerald-700">
-                        ✅ 手機長按節點同樣可以觸發呢個連線視窗<br>
-                        連線後會以<strong>綠色線</strong>顯示
-                    </div>
-                </div>`
+                </div>
+            </div>`
 
-            document.getElementById("connect-content").innerHTML = contentHTML
+            html += `</div>`
+            return html
+        }
+
+        function showConnectionModal(sourceId) {
+            const sourcePerson = getPersonById(sourceId)
+            if (!sourcePerson) return
+
+            currentSourceId = sourceId
+            document.getElementById("connect-title").innerHTML = `從 <span class="text-red-500 font-semibold">${sourcePerson.name}</span> 管理連線`
+
+            document.getElementById("connect-content").innerHTML = getConnectContentHTML(sourceId)
+
             const modal = document.getElementById("connect-modal")
             modal.classList.remove("hidden")
             modal.classList.add("flex")
@@ -716,16 +750,13 @@
 
             const targetId = parseInt(targetIdStr)
 
+            // 避免完全重複
             const exists = familyData.connections.some(c => 
                 (c.from === currentSourceId && c.to === targetId) || 
                 (c.from === targetId && c.to === currentSourceId)
             )
-
             if (exists) {
-                if (!confirm("呢兩個人物已經有連線，仲要新增？")) {
-                    hideConnectModal()
-                    return
-                }
+                if (!confirm("呢兩個人物已經有連線，仲要新增？")) return
             }
 
             familyData.connections.push({
@@ -736,10 +767,22 @@
 
             saveToLocalStorage()
             updateNetwork()
-            hideConnectModal()
+            
+            // 儲存後繼續保持 modal 開啟，讓用戶可以繼續新增或取消
+            document.getElementById("connect-content").innerHTML = getConnectContentHTML(currentSourceId)
         }
 
-        // ==================== 匯出 / 匯入 ====================
+        window.deleteConnection = function (fromId, toId) {
+            familyData.connections = familyData.connections.filter(c => !(c.from === fromId && c.to === toId))
+            saveToLocalStorage()
+            updateNetwork()
+            // 重新渲染 modal 內容
+            if (document.getElementById("connect-modal").classList.contains("flex") && currentSourceId !== null) {
+                document.getElementById("connect-content").innerHTML = getConnectContentHTML(currentSourceId)
+            }
+        }
+
+        // ==================== 匯出 / 匯入 / 清空 ====================
         function exportData() {
             const dataStr = JSON.stringify(familyData, null, 2)
             const blob = new Blob([dataStr], { type: "application/json" })
