@@ -2,7 +2,7 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>認親認戚圖 · 家庭人物關係圖</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
@@ -11,10 +11,11 @@
         body { font-family: 'Noto Sans TC', system-ui, sans-serif; }
         #mynetwork {
             width: 100%;
-            height: 500px;
+            height: 520px;
             border: 2px solid #e5e7eb;
             border-radius: 16px;
             background: #f8fafc;
+            touch-action: none; /* 提升手機觸控流暢度 */
         }
         .modal {
             animation: modalPop 0.3s ease-out;
@@ -22,6 +23,10 @@
         @keyframes modalPop {
             from { transform: scale(0.95); opacity: 0; }
             to { transform: scale(1); opacity: 1; }
+        }
+        /* 手機優化提示 */
+        .mobile-hint {
+            animation: pulse 2s infinite;
         }
     </style>
 </head>
@@ -73,12 +78,12 @@
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-2xl font-semibold flex items-center gap-x-2">
                         👥 認親認戚圖
-                        <span class="text-emerald-500 text-sm font-normal bg-emerald-100 px-3 py-0.5 rounded-3xl">互動拖拉 • 放大縮小 • 右鍵連線</span>
+                        <span class="text-emerald-500 text-sm font-normal bg-emerald-100 px-3 py-0.5 rounded-3xl">互動拖拉 • 放大縮小 • 點擊編輯 • 長按連線</span>
                     </h2>
                     <div class="text-xs text-slate-400 flex items-center gap-x-1">
                         <div class="w-3 h-3 bg-blue-500 rounded-full"></div> 男
                         <div class="w-3 h-3 bg-pink-500 rounded-full"></div> 女
-                        <span class="ml-2">點擊節點編輯 • 右鍵節點連線其他人</span>
+                        <span class="ml-2">點擊節點編輯 • <span class="mobile-hint">長按節點連線其他人</span></span>
                     </div>
                 </div>
                 <div id="mynetwork" class="shadow-inner"></div>
@@ -97,7 +102,7 @@
 
                 <!-- 列表 -->
                 <div class="flex-1 overflow-auto" id="relatives-list">
-                    <!-- JS 動態生成（主角 + 所有親戚） -->
+                    <!-- JS 動態生成 -->
                 </div>
 
                 <div class="text-xs text-slate-400 mt-4 text-center">
@@ -183,7 +188,7 @@
         </div>
     </div>
 
-    <!-- 新增連線 Modal（右鍵觸發） -->
+    <!-- 新增連線 Modal -->
     <div id="connect-modal" onclick="if(event.target.id==='connect-modal')hideConnectModal()" 
          class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
         <div onclick="event.stopImmediatePropagation()" 
@@ -218,42 +223,27 @@
                 birthYear: null,
                 notes: ""
             },
-            relatives: [],      // 其他人物
-            connections: []     // 手動連線：[{from, to, label}]
+            relatives: [],
+            connections: []
         }
 
         let network = null
         let nodesDataSet = null
         let edgesDataSet = null
         let currentEditId = null
-        let currentSourceId = null   // 右鍵連線用的 source
+        let currentSourceId = null
 
         // 生肖資料
         const zodiacList = ["鼠", "牛", "虎", "兔", "龍", "蛇", "馬", "羊", "猴", "雞", "狗", "豬"]
         const zodiacEmoji = ["🐭", "🐮", "🐯", "🐰", "🐲", "🐍", "🐴", "🐑", "🐒", "🐔", "🐶", "🐷"]
 
-        // ==================== 親戚關係五類別（D 要求） ====================
+        // ==================== 親戚關係五類別 ====================
         const relationCategories = [
-            {
-                label: "0. 我們一家",
-                options: ["主角", "阿爸", "阿媽", "阿哥", "細佬", "家姐", "阿妹", "老公", "老婆", "仔仔", "女女"]
-            },
-            {
-                label: "1. 阿爸嗰邊（父系）",
-                options: ["阿爺", "阿嫲", "伯公（兄）", "伯婆", "叔公（弟）", "叔婆", "姑婆", "姑公", "伯父", "伯娘", "阿叔", "嬸嬸", "姑姐", "姑丈", "堂兄", "堂姐", "堂弟", "堂妹", "表兄", "表姐", "表弟", "表妹"]
-            },
-            {
-                label: "2. 阿媽嗰邊（母系）",
-                options: ["外公（公公）", "外嫲（婆婆）", "外伯公", "外伯婆", "外叔公", "外叔婆", "姨婆", "姨公", "舅父", "舅母 / 妗母", "姨媽（大）", "姨姨（細）", "姨丈", "表兄", "表姐", "表弟", "表妹"]
-            },
-            {
-                label: "3. 老婆/老公阿爸嗰邊（岳父/老爺系）",
-                options: ["岳父 / 外父 / 老爺", "大舅（兄）", "大舅奶", "舅仔（弟）", "小舅奶", "大姨（姊）", "襟兄", "姨仔（妹）", "襟弟"]
-            },
-            {
-                label: "4. 老婆阿媽嗰邊（岳母系）",
-                options: ["岳母 / 外母 / 奶奶", "外舅父", "外舅母", "外姨媽", "外姨丈"]
-            }
+            { label: "0. 我們一家", options: ["主角", "阿爸", "阿媽", "阿哥", "細佬", "家姐", "阿妹", "老公", "老婆", "仔仔", "女女"] },
+            { label: "1. 阿爸嗰邊（父系）", options: ["阿爺", "阿嫲", "伯公（兄）", "伯婆", "叔公（弟）", "叔婆", "姑婆", "姑公", "伯父", "伯娘", "阿叔", "嬸嬸", "姑姐", "姑丈", "堂兄", "堂姐", "堂弟", "堂妹", "表兄", "表姐", "表弟", "表妹"] },
+            { label: "2. 阿媽嗰邊（母系）", options: ["外公（公公）", "外嫲（婆婆）", "外伯公", "外伯婆", "外叔公", "外叔婆", "姨婆", "姨公", "舅父", "舅母 / 妗母", "姨媽（大）", "姨姨（細）", "姨丈", "表兄", "表姐", "表弟", "表妹"] },
+            { label: "3. 老婆/老公阿爸嗰邊（岳父/老爺系）", options: ["岳父 / 外父 / 老爺", "大舅（兄）", "大舅奶", "舅仔（弟）", "小舅奶", "大姨（姊）", "襟兄", "姨仔（妹）", "襟弟"] },
+            { label: "4. 老婆阿媽嗰邊（岳母系）", options: ["岳母 / 外母 / 奶奶", "外舅父", "外舅母", "外姨媽", "外姨丈"] }
         ]
 
         function getRelationOptionsHTML() {
@@ -311,11 +301,9 @@
             nodesDataSet = new vis.DataSet()
             edgesDataSet = new vis.DataSet()
 
-            // 加入所有人物節點
             nodesDataSet.add(getNode(familyData.myInfo))
             familyData.relatives.forEach(person => nodesDataSet.add(getNode(person)))
 
-            // 自動連線：主角 → 每位親戚
             familyData.relatives.forEach(person => {
                 edgesDataSet.add({
                     from: 0,
@@ -326,7 +314,6 @@
                 })
             })
 
-            // 手動連線（綠色）
             familyData.connections.forEach(conn => {
                 edgesDataSet.add({
                     from: conn.from,
@@ -346,12 +333,17 @@
                     barnesHut: { gravitationalConstant: -8000, centralGravity: 0.3 },
                     stabilization: { iterations: 100 }
                 },
-                interaction: { dragNodes: true, zoomView: true, hover: true }
+                interaction: { 
+                    dragNodes: true, 
+                    zoomView: true, 
+                    hover: true,
+                    dragView: true
+                }
             }
 
             network = new vis.Network(container, { nodes: nodesDataSet, edges: edgesDataSet }, options)
 
-            // 點擊左鍵 → 編輯
+            // 左鍵點擊編輯
             network.on("click", function (params) {
                 if (params.nodes.length > 0) {
                     const clickedId = params.nodes[0]
@@ -359,15 +351,49 @@
                 }
             })
 
-            // 右鍵點擊節點 → 開啟連線視窗（C 要求）
-            const networkContainer = document.getElementById("mynetwork")
-            networkContainer.addEventListener("contextmenu", function (e) {
+            // 桌面右鍵連線（保留）
+            container.addEventListener("contextmenu", function (e) {
                 e.preventDefault()
                 const nodeId = network.getNodeAt({ x: e.offsetX, y: e.offsetY })
-                if (nodeId !== undefined) {
+                if (nodeId !== undefined && nodeId !== null) {
                     showConnectionModal(nodeId)
                 }
             })
+
+            // ==================== 手機長按連線（新增） ====================
+            let longPressTimer = null
+            const LONG_PRESS_DURATION = 650   // 長按 0.65 秒觸發
+
+            function getPointerPosition(e) {
+                const rect = container.getBoundingClientRect()
+                const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0)
+                const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0)
+                return {
+                    x: clientX - rect.left,
+                    y: clientY - rect.top
+                }
+            }
+
+            // 觸摸開始
+            container.addEventListener("touchstart", function (e) {
+                const pos = getPointerPosition(e)
+                const nodeId = network.getNodeAt(pos)
+                if (nodeId !== undefined && nodeId !== null) {
+                    longPressTimer = setTimeout(() => {
+                        showConnectionModal(nodeId)
+                    }, LONG_PRESS_DURATION)
+                }
+            }, { passive: true })
+
+            // 觸摸結束或移動 → 取消長按
+            function cancelLongPress() {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer)
+                    longPressTimer = null
+                }
+            }
+            container.addEventListener("touchend", cancelLongPress, { passive: true })
+            container.addEventListener("touchmove", cancelLongPress, { passive: true })
         }
 
         function updateNetwork() {
@@ -375,11 +401,9 @@
             nodesDataSet.clear()
             edgesDataSet.clear()
 
-            // 節點
             nodesDataSet.add(getNode(familyData.myInfo))
             familyData.relatives.forEach(person => nodesDataSet.add(getNode(person)))
 
-            // 自動連線（主角 → 親戚）
             familyData.relatives.forEach(person => {
                 edgesDataSet.add({
                     from: 0,
@@ -390,7 +414,6 @@
                 })
             })
 
-            // 手動連線
             familyData.connections.forEach(conn => {
                 edgesDataSet.add({
                     from: conn.from,
@@ -407,7 +430,6 @@
             const container = document.getElementById("relatives-list")
             let html = `<div class="space-y-3">`
 
-            // 主角永遠排最上面（A 要求）
             const me = familyData.myInfo
             html += `
             <div class="flex items-center justify-between bg-emerald-50 border border-emerald-300 rounded-3xl px-5 py-4 group">
@@ -426,7 +448,6 @@
                 </button>
             </div>`
 
-            // 其他親戚
             if (familyData.relatives.length === 0) {
                 html += `
                 <div class="bg-slate-50 border border-dashed border-slate-300 rounded-3xl p-8 text-center text-slate-400">
@@ -474,9 +495,7 @@
             const saved = localStorage.getItem("familyData")
             if (saved) {
                 familyData = JSON.parse(saved)
-                if (!familyData.myInfo) {
-                    familyData.myInfo = { id: 0, name: "我", relation: "自己", gender: "", birthYear: null, notes: "" }
-                }
+                if (!familyData.myInfo) familyData.myInfo = { id: 0, name: "我", relation: "自己", gender: "", birthYear: null, notes: "" }
                 if (!familyData.relatives) familyData.relatives = []
                 if (!familyData.connections) familyData.connections = []
             }
@@ -550,7 +569,6 @@
             }
 
             if (currentEditId === null) {
-                // 新增親戚
                 const newPerson = {
                     id: Date.now(),
                     relation: relation,
@@ -561,14 +579,12 @@
                 }
                 familyData.relatives.push(newPerson)
             } else if (currentEditId === 0) {
-                // 編輯主角（A 要求）
                 familyData.myInfo.relation = relation
                 familyData.myInfo.name = name
                 familyData.myInfo.gender = gender
                 familyData.myInfo.birthYear = birthYear
                 familyData.myInfo.notes = notes
             } else {
-                // 編輯其他親戚
                 const person = familyData.relatives.find(p => p.id === currentEditId)
                 if (person) {
                     person.relation = relation
@@ -604,7 +620,6 @@
             document.getElementById("input-birthyear").value = person.birthYear || ""
             document.getElementById("input-notes").value = person.notes || ""
 
-            // 性別選擇
             document.getElementById("input-gender").value = person.gender || ""
             document.querySelectorAll(".gender-option").forEach(el => {
                 if (el.dataset.value === person.gender) {
@@ -619,10 +634,9 @@
         }
 
         function deletePerson(id) {
-            if (id === 0) return // 不能刪主角
+            if (id === 0) return
             if (!confirm("確定刪除呢個親戚？")) return
             familyData.relatives = familyData.relatives.filter(p => p.id !== id)
-            // 同時刪除相關連線
             familyData.connections = familyData.connections.filter(c => c.from !== id && c.to !== id)
             saveToLocalStorage()
             updateNetwork()
@@ -636,16 +650,12 @@
                 : "未填出生年份"
         }
 
-        // ==================== 連線功能（C 要求） ====================
+        // ==================== 連線功能 ====================
         function getOtherPeopleOptions(sourceId) {
             let html = `<option value="">-- 選擇目標人物 --</option>`
-            
-            // 主角
             if (sourceId !== 0) {
                 html += `<option value="0">${familyData.myInfo.name} (自己 / 主角)</option>`
             }
-            
-            // 其他親戚
             familyData.relatives.forEach(p => {
                 if (p.id !== sourceId) {
                     html += `<option value="${p.id}">${p.name} (${p.relation})</option>`
@@ -677,7 +687,8 @@
                         </select>
                     </div>
                     <div class="text-xs bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-emerald-700">
-                        連線後會以<strong>綠色線</strong>顯示，方便你一眼睇清親戚之間嘅關係
+                        ✅ 手機長按節點同樣可以觸發呢個連線視窗<br>
+                        連線後會以<strong>綠色線</strong>顯示
                     </div>
                 </div>`
 
@@ -705,7 +716,6 @@
 
             const targetId = parseInt(targetIdStr)
 
-            // 避免重複連線
             const exists = familyData.connections.some(c => 
                 (c.from === currentSourceId && c.to === targetId) || 
                 (c.from === targetId && c.to === currentSourceId)
@@ -781,7 +791,6 @@
             updateMyInfoCard()
             previewAgeZodiac()
 
-            // Tailwind
             return {
                 config(userConfig = {}) {
                     return {
