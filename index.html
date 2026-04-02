@@ -38,6 +38,7 @@
                 <div>
                     <h1 class="text-3xl font-bold tracking-tight">認親認戚產生器</h1>
                     <p class="text-slate-500 text-sm">由你角度出發 · 一目了然認清所有親戚</p>
+                    <p class="text-slate-400 text-xs mt-0.5">by Kowloon Creation CHANNAL</p>
                 </div>
             </div>
             
@@ -84,7 +85,7 @@
                     <!-- JS 動態生成 -->
                 </div>
 
-                <!-- 匯出 / 匯入 / 清空（最下方） -->
+                <!-- 匯出 / 匯入 / 清空 / 金主模式（最下方） -->
                 <div class="mt-6 pt-6 border-t border-slate-200 flex flex-wrap items-center gap-3">
                     <button onclick="exportData()" 
                             class="flex-1 sm:flex-none flex items-center justify-center gap-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl font-medium text-sm transition-colors">
@@ -100,6 +101,10 @@
                     <button onclick="clearAllData()" 
                             class="flex-1 sm:flex-none text-red-500 hover:text-red-600 hover:bg-red-50 px-5 py-3 rounded-2xl font-medium text-sm transition-colors flex items-center justify-center gap-x-1">
                         <span>🗑️</span> 清空全部
+                    </button>
+                    <button onclick="showGoldModal()" 
+                            class="flex-1 sm:flex-none text-amber-500 hover:text-amber-600 hover:bg-amber-50 px-5 py-3 rounded-2xl font-medium text-sm transition-colors flex items-center justify-center gap-x-1 border border-amber-200">
+                        <span>💰</span> 金主模式
                     </button>
                 </div>
 
@@ -201,6 +206,50 @@
         </div>
     </div>
 
+    <!-- 金主模式 Modal -->
+    <div id="gold-modal" onclick="if(event.target.id==='gold-modal')hideGoldModal()" 
+         class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div onclick="event.stopImmediatePropagation()" 
+             class="modal bg-white w-full max-w-lg mx-4 rounded-3xl shadow-2xl p-8">
+            <h3 class="text-2xl font-bold mb-6 flex items-center gap-x-3">💰 金主模式</h3>
+            
+            <div class="space-y-8">
+                <!-- Toggle -->
+                <div class="flex items-center justify-between bg-slate-50 rounded-3xl px-6 py-5">
+                    <div class="text-lg font-medium">金主模式</div>
+                    <div onclick="toggleGoldMode()" id="gold-toggle" 
+                         class="px-8 py-2 rounded-3xl font-semibold text-sm cursor-pointer transition-all">
+                        <!-- JS 動態填入 ON / OFF -->
+                    </div>
+                </div>
+
+                <!-- 課金打賞 -->
+                <div class="bg-amber-50 border border-amber-200 rounded-3xl p-6">
+                    <p class="font-medium text-amber-800">課金打賞</p>
+                    <p class="text-amber-700">CHANnal of Kowloon Creation</p>
+                    <div class="mt-4 flex items-center gap-x-3">
+                        <span class="font-mono text-xl text-amber-800">FPS</span>
+                        <span id="fps-number" onclick="copyFPS()" 
+                              class="font-mono bg-white px-5 py-3 rounded-2xl cursor-pointer select-all border border-amber-300 hover:border-amber-500 text-lg">
+                            127097723
+                        </span>
+                    </div>
+                    <p class="text-xs text-amber-600 mt-2">長按數字可複製</p>
+                </div>
+
+                <!-- 回饋意見 -->
+                <div class="text-sm text-slate-600 leading-relaxed">
+                    回饋、意見 可以用 FPS 的備註留言。
+                </div>
+            </div>
+
+            <button onclick="hideGoldModal()" 
+                    class="mt-8 w-full py-4 text-slate-500 font-medium border border-slate-300 rounded-2xl hover:bg-slate-100 transition-colors">
+                關閉
+            </button>
+        </div>
+    </div>
+
     <script>
         // ==================== 資料結構 ====================
         let familyData = {
@@ -221,6 +270,7 @@
         let edgesDataSet = null
         let currentEditId = null
         let currentSourceId = null
+        let goldMode = false   // 金主模式，預設 OFF
 
         // 生肖資料
         const zodiacList = ["鼠", "牛", "虎", "兔", "龍", "蛇", "馬", "羊", "猴", "雞", "狗", "豬"]
@@ -282,11 +332,21 @@
         }
 
         function getNode(person) {
-            const color = person.gender === "男" 
-                ? { background: "#3b82f6", border: "#1e40af", highlight: { background: "#2563eb" } }
-                : person.gender === "女"
-                    ? { background: "#ec4899", border: "#be185d", highlight: { background: "#db2777" } }
-                    : { background: "#64748b", border: "#334155" }
+            let color
+            if (person.id === 0 && goldMode) {
+                // 金主模式主角變金色
+                color = {
+                    background: "#fbbf24",
+                    border: "#b45309",
+                    highlight: { background: "#f59e0b" }
+                }
+            } else if (person.gender === "男") {
+                color = { background: "#3b82f6", border: "#1e40af", highlight: { background: "#2563eb" } }
+            } else if (person.gender === "女") {
+                color = { background: "#ec4899", border: "#be185d", highlight: { background: "#db2777" } }
+            } else {
+                color = { background: "#64748b", border: "#334155" }
+            }
             
             return {
                 id: person.id,
@@ -498,6 +558,14 @@
             }
         }
 
+        function loadGoldMode() {
+            goldMode = localStorage.getItem("goldMode") === "true"
+        }
+
+        function saveGoldMode() {
+            localStorage.setItem("goldMode", goldMode)
+        }
+
         function populateRelationSelect() {
             const select = document.getElementById("input-relation")
             if (select) select.innerHTML = getRelationOptionsHTML()
@@ -652,7 +720,6 @@
             const sourcePerson = getPersonById(sourceId)
             let html = `<div class="space-y-8">`
 
-            // 已連線列表
             const relatedConns = familyData.connections.filter(c => c.from === sourceId || c.to === sourceId)
             html += `<div>`
             html += `<label class="block text-sm font-medium mb-3 text-emerald-700">已連線的人物（點擊取消連線）</label>`
@@ -689,7 +756,6 @@
             }
             html += `</div>`
 
-            // 新增連線表單 + 儲存按鈕
             html += `
             <div>
                 <h4 class="text-sm font-semibold mb-4 flex items-center gap-x-2"><span class="text-emerald-500 text-xl">➕</span> 新增連線</h4>
@@ -767,7 +833,6 @@
             saveToLocalStorage()
             updateNetwork()
             
-            // 儲存後重新渲染 modal，讓用戶可以繼續新增
             document.getElementById("connect-content").innerHTML = getConnectContentHTML(currentSourceId)
         }
 
@@ -780,6 +845,60 @@
             }
         }
 
+        // ==================== 金主模式 ====================
+        function toggleGoldMode() {
+            goldMode = !goldMode
+            saveGoldMode()
+            updateNetwork()
+            
+            // 更新 modal 內的按鈕狀態
+            const toggleEl = document.getElementById("gold-toggle")
+            if (toggleEl) {
+                if (goldMode) {
+                    toggleEl.textContent = "ON"
+                    toggleEl.className = "px-8 py-2 rounded-3xl font-semibold text-sm cursor-pointer bg-emerald-500 text-white"
+                } else {
+                    toggleEl.textContent = "OFF"
+                    toggleEl.className = "px-8 py-2 rounded-3xl font-semibold text-sm cursor-pointer bg-slate-300 text-slate-700"
+                }
+            }
+        }
+
+        function showGoldModal() {
+            const modal = document.getElementById("gold-modal")
+            const toggleEl = document.getElementById("gold-toggle")
+            
+            if (toggleEl) {
+                if (goldMode) {
+                    toggleEl.textContent = "ON"
+                    toggleEl.className = "px-8 py-2 rounded-3xl font-semibold text-sm cursor-pointer bg-emerald-500 text-white"
+                } else {
+                    toggleEl.textContent = "OFF"
+                    toggleEl.className = "px-8 py-2 rounded-3xl font-semibold text-sm cursor-pointer bg-slate-300 text-slate-700"
+                }
+            }
+            
+            modal.classList.remove("hidden")
+            modal.classList.add("flex")
+        }
+
+        function hideGoldModal() {
+            const modal = document.getElementById("gold-modal")
+            modal.classList.add("hidden")
+            modal.classList.remove("flex")
+        }
+
+        function copyFPS() {
+            navigator.clipboard.writeText("127097723").then(() => {
+                const el = document.getElementById("fps-number")
+                const originalText = el.innerHTML
+                el.innerHTML = `✅ 已複製！`
+                setTimeout(() => {
+                    el.innerHTML = originalText
+                }, 1800)
+            })
+        }
+
         // ==================== 匯出 / 匯入 / 清空 ====================
         function exportData() {
             const dataStr = JSON.stringify(familyData, null, 2)
@@ -787,7 +906,7 @@
             const url = URL.createObjectURL(blob)
             const link = document.createElement("a")
             link.href = url
-            link.download = `認親認戚圖_備份_${new Date().toISOString().slice(0,10)}.json`
+            link.download = `認親認戚產生器_備份_${new Date().toISOString().slice(0,10)}.json`
             link.click()
             URL.revokeObjectURL(url)
         }
@@ -827,6 +946,7 @@
         // ==================== 啟動 ====================
         function initialize() {
             loadFromLocalStorage()
+            loadGoldMode()
             initNetwork()
             renderRelativesList()
             updateMyInfoCard()
