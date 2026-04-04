@@ -37,7 +37,7 @@
                 <div class="w-10 h-10 bg-red-500 text-white rounded-2xl flex items-center justify-center text-2xl">👪</div>
                 <div>
                     <h1 class="text-3xl font-bold tracking-tight">認親認戚產生器</h1>
-                    <p class="text-slate-500 text-sm">由你角度出發 · 一目了然認清所有親戚</p>
+                    <p class="text-slate-500 text-sm">由你角度出發 · 一目了然認清關係</p>
                     <p class="text-slate-400 text-xs mt-0.5">by Kowloon Creation CHANNAL</p>
                 </div>
             </div>
@@ -46,7 +46,7 @@
             <div onclick="editPerson(0)" class="flex items-center gap-x-2 bg-emerald-100 hover:bg-emerald-200 transition-colors rounded-2xl px-4 py-2 cursor-pointer">
                 <span class="text-2xl">👑</span>
                 <div>
-                    <div id="my-name-display" class="font-semibold">我（主角）</div>
+                    <div id="my-name-display" class="font-semibold">我</div>
                     <div id="my-age-zodiac" class="text-xs text-slate-500"></div>
                 </div>
             </div>
@@ -85,7 +85,7 @@
                     <!-- JS 動態生成 -->
                 </div>
 
-                <!-- 按鈕區域：分享 → 匯出 → 匯入 → 清空 → 金主模式 -->
+                <!-- 按鈕區域 -->
                 <div class="mt-6 pt-6 border-t border-slate-200 flex flex-wrap items-center gap-3">
                     <button onclick="shareImage()" 
                             class="flex-1 sm:flex-none flex items-center justify-center gap-x-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl font-medium text-sm transition-colors">
@@ -313,6 +313,13 @@
             return html
         }
 
+        function getZodiacEmoji(person) {
+            if (!person.birthYear) return ""
+            const index = (person.birthYear - 4) % 12
+            const idx = index < 0 ? index + 12 : index
+            return zodiacEmoji[idx]
+        }
+
         // ==================== 工具函數 ====================
         function getCurrentYear() {
             return new Date().getFullYear()
@@ -343,11 +350,15 @@
             } else {
                 color = { background: "#64748b", border: "#334155" }
             }
-            
+
+            const emoji = getZodiacEmoji(person)
+            const labelText = emoji 
+                ? `${person.name}\n${emoji}` 
+                : person.name
+
             return {
                 id: person.id,
-                label: person.name,
-                // 改用 \n 換行，讓 tooltip 正常顯示（取消 <br> 和 <small>）
+                label: labelText,
                 title: `${person.relation}\n${person.name}\n${getAgeZodiac(person)}\n${person.notes || "無備註"}`,
                 color: color,
                 shape: "circle",
@@ -490,7 +501,7 @@
                 <div class="flex items-center gap-x-4">
                     <div class="text-4xl">👑</div>
                     <div>
-                        <div class="font-semibold text-lg">${me.name} <span class="text-emerald-500 text-sm">(主角)</span></div>
+                        <div class="font-semibold text-lg">${me.name}</div>
                         <div class="text-red-500 text-sm">${me.relation || "自己"}</div>
                         <div class="text-emerald-600 text-xs">${getAgeZodiac(me)}</div>
                     </div>
@@ -695,7 +706,7 @@
         }
 
         function updateMyInfoCard() {
-            document.getElementById("my-name-display").innerHTML = `${familyData.myInfo.name} <span class="text-emerald-500 text-sm">(主角)</span>`
+            document.getElementById("my-name-display").innerHTML = familyData.myInfo.name
             document.getElementById("my-age-zodiac").innerHTML = familyData.myInfo.birthYear 
                 ? `<span class="text-emerald-600">${getAgeZodiac(familyData.myInfo)}</span>` 
                 : "未填出生年份"
@@ -889,14 +900,10 @@
             })
         }
 
-        // ==================== 分享功能（新功能） ====================
+        // ==================== 分享功能 ====================
         async function shareImage() {
             if (!network) return
-
-            // 先自動縮放讓所有人物都顯示在畫面
             network.fit({ animation: { duration: 300 } })
-
-            // 等待縮放完成
             await new Promise(resolve => setTimeout(resolve, 500))
 
             const networkCanvas = document.querySelector('#mynetwork canvas')
@@ -905,7 +912,6 @@
                 return
             }
 
-            // 建立 1:1 比例的分享圖片
             const headerHeight = 180
             const totalWidth = Math.max(networkCanvas.width, 900)
             const totalHeight = networkCanvas.height + headerHeight
@@ -915,11 +921,9 @@
             shareCanvas.height = totalHeight
             const ctx = shareCanvas.getContext('2d')
 
-            // 白色背景
             ctx.fillStyle = '#ffffff'
             ctx.fillRect(0, 0, totalWidth, totalHeight)
 
-            // 橫額文字
             ctx.fillStyle = '#1e2937'
             ctx.font = '700 36px "Noto Sans TC", sans-serif'
             ctx.textAlign = 'center'
@@ -927,17 +931,15 @@
 
             ctx.fillStyle = '#64748b'
             ctx.font = '500 20px "Noto Sans TC", sans-serif'
-            ctx.fillText('由你角度出發 · 一目了然認清所有親戚', totalWidth / 2, 105)
+            ctx.fillText('由你角度出發 · 一目了然認清關係', totalWidth / 2, 105)
 
             ctx.fillStyle = '#94a3b8'
             ctx.font = '400 14px "Noto Sans TC", sans-serif'
             ctx.fillText('by Kowloon Creation CHANNAL', totalWidth / 2, 135)
 
-            // 把關係圖畫上去（置中）
             const networkX = (totalWidth - networkCanvas.width) / 2
             ctx.drawImage(networkCanvas, networkX, headerHeight)
 
-            // 轉成圖片
             shareCanvas.toBlob(async (blob) => {
                 const file = new File([blob], '認親認戚圖.png', { type: 'image/png' })
 
@@ -946,15 +948,12 @@
                         await navigator.share({
                             files: [file],
                             title: '我的家庭關係圖',
-                            text: '認親認戚產生器 by Kowloon Creation CHANNAL'
+                            text: '認親認戚產生器 by Kowloon Creation CHANNAL\nhttps://fm.kowlooncc.workers.dev'
                         })
                         return
-                    } catch (e) {
-                        // 用戶取消或不支援，繼續下載
-                    }
+                    } catch (e) {}
                 }
 
-                // 後備：下載圖片
                 const url = URL.createObjectURL(blob)
                 const a = document.createElement('a')
                 a.href = url
