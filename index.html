@@ -103,6 +103,10 @@
                         匯入 JSON
                         <input id="import-input" type="file" accept=".json" class="hidden" onchange="importData(event)">
                     </label>
+                    <button onclick="loadDefaultPersons()" 
+                            class="flex-1 sm:flex-none text-amber-600 hover:text-amber-700 hover:bg-amber-50 px-5 py-3 rounded-2xl font-medium text-sm transition-colors flex items-center justify-center gap-x-1 border border-amber-200">
+                        <span>🌟</span> 預設人物
+                    </button>
                     <button onclick="clearAllData()" 
                             class="flex-1 sm:flex-none text-red-500 hover:text-red-600 hover:bg-red-50 px-5 py-3 rounded-2xl font-medium text-sm transition-colors flex items-center justify-center gap-x-1">
                         <span>🗑️</span> 清空全部
@@ -144,33 +148,49 @@
                            placeholder="例如：阿明、表姐阿花">
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-2">性別</label>
-                        <div class="flex gap-x-4">
-                            <label onclick="selectGender(this)" data-value="男"
-                                   class="gender-option flex-1 flex items-center justify-center gap-x-2 border-2 border-transparent bg-slate-100 hover:bg-blue-100 rounded-2xl py-4 cursor-pointer">
-                                👦 男
-                            </label>
-                            <label onclick="selectGender(this)" data-value="女"
-                                   class="gender-option flex-1 flex items-center justify-center gap-x-2 border-2 border-transparent bg-slate-100 hover:bg-pink-100 rounded-2xl py-4 cursor-pointer">
-                                👧 女
-                            </label>
+                <!-- 新增：出生年月日時 -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">出生日期及時間</label>
+                    <div class="grid grid-cols-4 gap-3">
+                        <div>
+                            <input id="input-birthyear" type="number" min="1900" max="2030" 
+                                   class="w-full border border-slate-300 focus:border-red-400 rounded-2xl px-4 py-3 text-lg focus:outline-none"
+                                   placeholder="年">
                         </div>
-                        <input type="hidden" id="input-gender">
+                        <div>
+                            <input id="input-birthmonth" type="number" min="1" max="12" 
+                                   class="w-full border border-slate-300 focus:border-red-400 rounded-2xl px-4 py-3 text-lg focus:outline-none"
+                                   placeholder="月">
+                        </div>
+                        <div>
+                            <input id="input-birthday" type="number" min="1" max="31" 
+                                   class="w-full border border-slate-300 focus:border-red-400 rounded-2xl px-4 py-3 text-lg focus:outline-none"
+                                   placeholder="日">
+                        </div>
+                        <div>
+                            <input id="input-birthhour" type="number" min="0" max="23" 
+                                   class="w-full border border-slate-300 focus:border-red-400 rounded-2xl px-4 py-3 text-lg focus:outline-none"
+                                   placeholder="時">
+                        </div>
                     </div>
+                    <div id="preview-age-zodiac" class="mt-2 text-emerald-600 text-sm font-medium"></div>
+                </div>
 
-                    <div>
-                        <label class="block text-sm font-medium mb-2">出生年份（自動計年齡＋生肖）</label>
-                        <input id="input-birthyear" type="number" min="1900" max="2030" 
-                               class="w-full border border-slate-300 focus:border-red-400 rounded-2xl px-4 py-3 text-lg focus:outline-none"
-                               placeholder="1995">
-                        <div id="preview-age-zodiac" class="mt-2 text-emerald-600 text-sm font-medium"></div>
+                <!-- 新增：電話（預設852） -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">電話（香港預設852）</label>
+                    <div class="flex gap-x-2">
+                        <input id="input-phone-prefix" type="text" value="852" 
+                               class="w-20 border border-slate-300 focus:border-red-400 rounded-2xl px-4 py-3 text-lg focus:outline-none text-center">
+                        <input id="input-phone" type="tel" 
+                               class="flex-1 border border-slate-300 focus:border-red-400 rounded-2xl px-4 py-3 text-lg focus:outline-none"
+                               placeholder="12345678">
                     </div>
                 </div>
 
+                <!-- 備註 -->
                 <div>
-                    <label class="block text-sm font-medium mb-2">備註（任意寫資料，例如電話、特徵）</label>
+                    <label class="block text-sm font-medium mb-2">備註（任意寫資料，例如特徵）</label>
                     <textarea id="input-notes" rows="3"
                               class="w-full border border-slate-300 focus:border-red-400 rounded-3xl px-4 py-3 focus:outline-none resize-none"
                               placeholder="例如：喜歡打麻雀、住在屯門..."></textarea>
@@ -252,7 +272,7 @@
     </div>
 
     <script>
-        // ==================== 資料結構 ====================
+        // ==================== 資料結構（新增出生月日時 + 電話） ====================
         let familyData = {
             myInfo: {
                 id: 0,
@@ -260,6 +280,10 @@
                 relation: "自己",
                 gender: "",
                 birthYear: null,
+                birthMonth: null,
+                birthDay: null,
+                birthHour: null,
+                phone: "",
                 notes: ""
             },
             relatives: [],
@@ -334,6 +358,15 @@
             return `${age}歲　${z} ${e}`
         }
 
+        function getFullBirthInfo(person) {
+            let str = ""
+            if (person.birthYear) str += person.birthYear + "年"
+            if (person.birthMonth) str += person.birthMonth + "月"
+            if (person.birthDay) str += person.birthDay + "日"
+            if (person.birthHour != null) str += " " + person.birthHour + "時"
+            return str || "未填"
+        }
+
         function getPersonById(id) {
             if (id === 0) return familyData.myInfo
             return familyData.relatives.find(p => p.id === id)
@@ -356,10 +389,12 @@
                 ? `${person.name}\n${emoji}` 
                 : person.name
 
+            const tooltip = `${person.relation}\n${person.name}\n${getAgeZodiac(person)}\n${getFullBirthInfo(person)}\n電話：${person.phone || "未填"}\n${person.notes || "無備註"}`
+
             return {
                 id: person.id,
                 label: labelText,
-                title: `${person.relation}\n${person.name}\n${getAgeZodiac(person)}\n${person.notes || "無備註"}`,
+                title: tooltip,
                 color: color,
                 shape: "circle",
                 size: person.id === 0 ? 45 : 35,
@@ -517,7 +552,7 @@
                 html += `
                 <div class="bg-slate-50 border border-dashed border-slate-300 rounded-3xl p-8 text-center text-slate-400">
                     仲未有其他親戚<br>
-                    按上方「新增親戚」開始記錄啦！
+                    按上方「新增親戚」或下方「預設人物」開始記錄啦！
                 </div>`
             } else {
                 familyData.relatives.forEach(person => {
@@ -560,7 +595,9 @@
             const saved = localStorage.getItem("familyData")
             if (saved) {
                 familyData = JSON.parse(saved)
-                if (!familyData.myInfo) familyData.myInfo = { id: 0, name: "我", relation: "自己", gender: "", birthYear: null, notes: "" }
+                if (!familyData.myInfo) {
+                    familyData.myInfo = { id: 0, name: "我", relation: "自己", gender: "", birthYear: null, birthMonth: null, birthDay: null, birthHour: null, phone: "", notes: "" }
+                }
                 if (!familyData.relatives) familyData.relatives = []
                 if (!familyData.connections) familyData.connections = []
             }
@@ -574,9 +611,13 @@
             localStorage.setItem("goldMode", goldMode)
         }
 
-        function populateRelationSelect() {
+        function populateRelationSelect(isSelf = false) {
             const select = document.getElementById("input-relation")
-            if (select) select.innerHTML = getRelationOptionsHTML()
+            if (!select) return
+            select.innerHTML = getRelationOptionsHTML()
+            if (isSelf) {
+                select.value = "主角"
+            }
         }
 
         // ==================== Modal 控制 ====================
@@ -584,12 +625,16 @@
             currentEditId = null
             document.getElementById("modal-title").textContent = "新增親戚"
             document.getElementById("save-btn").textContent = "儲存親戚"
-            populateRelationSelect()
+            populateRelationSelect(false)
             
             document.getElementById("input-name").value = ""
             document.getElementById("input-birthyear").value = ""
+            document.getElementById("input-birthmonth").value = ""
+            document.getElementById("input-birthday").value = ""
+            document.getElementById("input-birthhour").value = ""
+            document.getElementById("input-phone-prefix").value = "852"
+            document.getElementById("input-phone").value = ""
             document.getElementById("input-notes").value = ""
-            document.getElementById("input-gender").value = ""
             
             document.querySelectorAll(".gender-option").forEach(el => el.classList.remove("border-red-400", "ring-2", "ring-red-300"))
             document.getElementById("preview-age-zodiac").innerHTML = ""
@@ -610,16 +655,19 @@
         }
 
         function previewAgeZodiac() {
-            const birthInput = document.getElementById("input-birthyear")
+            const yearInput = document.getElementById("input-birthyear")
             const preview = document.getElementById("preview-age-zodiac")
-            birthInput.oninput = function () {
-                if (!this.value) {
-                    preview.innerHTML = ""
-                    return
+            const inputs = [yearInput]
+            inputs.forEach(input => {
+                if (input) input.oninput = () => {
+                    if (!yearInput.value) {
+                        preview.innerHTML = ""
+                        return
+                    }
+                    const year = parseInt(yearInput.value)
+                    preview.innerHTML = `預覽： <span class="font-semibold">${getAgeZodiac({birthYear: year})}</span>`
                 }
-                const year = parseInt(this.value)
-                preview.innerHTML = `預覽： <span class="font-semibold">${getAgeZodiac({birthYear: year})}</span>`
-            }
+            })
         }
 
         function savePerson() {
@@ -627,6 +675,12 @@
             const name = document.getElementById("input-name").value.trim()
             const gender = document.getElementById("input-gender").value
             const birthYear = document.getElementById("input-birthyear").value ? parseInt(document.getElementById("input-birthyear").value) : null
+            const birthMonth = document.getElementById("input-birthmonth").value ? parseInt(document.getElementById("input-birthmonth").value) : null
+            const birthDay = document.getElementById("input-birthday").value ? parseInt(document.getElementById("input-birthday").value) : null
+            const birthHour = document.getElementById("input-birthhour").value ? parseInt(document.getElementById("input-birthhour").value) : null
+            const phonePrefix = document.getElementById("input-phone-prefix").value.trim()
+            const phoneNumber = document.getElementById("input-phone").value.trim()
+            const phone = phoneNumber ? `${phonePrefix} ${phoneNumber}` : ""
             const notes = document.getElementById("input-notes").value.trim()
 
             if (!relation || !name) {
@@ -641,6 +695,10 @@
                     name: name,
                     gender: gender,
                     birthYear: birthYear,
+                    birthMonth: birthMonth,
+                    birthDay: birthDay,
+                    birthHour: birthHour,
+                    phone: phone,
                     notes: notes
                 })
             } else if (currentEditId === 0) {
@@ -648,6 +706,10 @@
                 familyData.myInfo.name = name
                 familyData.myInfo.gender = gender
                 familyData.myInfo.birthYear = birthYear
+                familyData.myInfo.birthMonth = birthMonth
+                familyData.myInfo.birthDay = birthDay
+                familyData.myInfo.birthHour = birthHour
+                familyData.myInfo.phone = phone
                 familyData.myInfo.notes = notes
             } else {
                 const person = familyData.relatives.find(p => p.id === currentEditId)
@@ -656,6 +718,10 @@
                     person.name = name
                     person.gender = gender
                     person.birthYear = birthYear
+                    person.birthMonth = birthMonth
+                    person.birthDay = birthDay
+                    person.birthHour = birthHour
+                    person.phone = phone
                     person.notes = notes
                 }
             }
@@ -673,13 +739,23 @@
             if (!person) return
 
             currentEditId = id
-            document.getElementById("modal-title").textContent = (id === 0) ? "編輯自己（主角）資料" : "編輯親戚"
+            const isSelf = id === 0
+            document.getElementById("modal-title").textContent = isSelf ? "編輯自己（主角）資料" : "編輯親戚"
             document.getElementById("save-btn").textContent = "更新資料"
 
-            populateRelationSelect()
-            document.getElementById("input-relation").value = person.relation || (id === 0 ? "自己" : "")
-            document.getElementById("input-name").value = person.name
+            populateRelationSelect(isSelf)
+
+            document.getElementById("input-relation").value = person.relation || (isSelf ? "主角" : "")
+            document.getElementById("input-name").value = person.name || (isSelf ? "聰明的我" : "")
             document.getElementById("input-birthyear").value = person.birthYear || ""
+            document.getElementById("input-birthmonth").value = person.birthMonth || ""
+            document.getElementById("input-birthday").value = person.birthDay || ""
+            document.getElementById("input-birthhour").value = person.birthHour != null ? person.birthHour : ""
+            
+            const phoneParts = (person.phone || "").split(" ")
+            document.getElementById("input-phone-prefix").value = phoneParts[0] || "852"
+            document.getElementById("input-phone").value = phoneParts.slice(1).join(" ") || ""
+
             document.getElementById("input-notes").value = person.notes || ""
 
             document.getElementById("input-gender").value = person.gender || ""
@@ -900,6 +976,82 @@
             })
         }
 
+        // ==================== 預設人物 ====================
+        function loadDefaultPersons() {
+            if (familyData.relatives.length > 0) {
+                if (!confirm("已經有親戚資料，確定要加入預設人物？")) return
+            }
+
+            // 清空現有（避免重複）
+            familyData.relatives = []
+            familyData.connections = []
+
+            // 阿媽
+            const mom = {
+                id: Date.now(),
+                relation: "阿媽",
+                name: "虎媽",
+                gender: "女",
+                birthYear: 1986,
+                birthMonth: null,
+                birthDay: null,
+                birthHour: null,
+                phone: "",
+                notes: ""
+            }
+            familyData.relatives.push(mom)
+
+            // 老豆
+            const dad = {
+                id: Date.now() + 1,
+                relation: "老豆",
+                name: "羊爸",
+                gender: "男",
+                birthYear: 1979,
+                birthMonth: null,
+                birthDay: null,
+                birthHour: null,
+                phone: "",
+                notes: ""
+            }
+            familyData.relatives.push(dad)
+
+            // 外公
+            const grandpa = {
+                id: Date.now() + 2,
+                relation: "外公",
+                name: "公公",
+                gender: "男",
+                birthYear: 1960,
+                birthMonth: null,
+                birthDay: null,
+                birthHour: null,
+                phone: "",
+                notes: ""
+            }
+            familyData.relatives.push(grandpa)
+
+            // 連線：羊爸 → 虎媽 = 老婆
+            familyData.connections.push({
+                from: dad.id,
+                to: mom.id,
+                label: "老婆"
+            })
+
+            // 連線：公公 → 虎媽 = 囡囡
+            familyData.connections.push({
+                from: grandpa.id,
+                to: mom.id,
+                label: "囡囡"
+            })
+
+            saveToLocalStorage()
+            updateNetwork()
+            renderRelativesList()
+            updateMyInfoCard()
+            alert("✅ 已加入預設人物（虎媽、羊爸、公公）同連線！")
+        }
+
         // ==================== 分享功能 ====================
         async function shareImage() {
             if (!network) return
@@ -948,7 +1100,7 @@
                         await navigator.share({
                             files: [file],
                             title: '我的家庭關係圖',
-                            text: '認親認戚產生器 by Kowloon Creation CHANNAL\nhttps://fm.kowlooncc.workers.dev'
+                            text: '認親認戚產生器\nhttps://fm.kowlooncc.workers.dev'
                         })
                         return
                     } catch (e) {}
